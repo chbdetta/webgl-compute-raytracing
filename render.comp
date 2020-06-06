@@ -289,7 +289,7 @@ vec3 refract_dir(vec3 normal, vec3 dir, float ior) {
   return ior * dir + (ior * c1 - c2) * normal;
 }
 
-const int max_depth = 5;
+const int max_depth = 8;
 // get the color of a ray
 vec3 get_color(Ray r, inout float seed, vec2 pixel) {
   int depth = 0;
@@ -304,10 +304,12 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
       Mesh mesh = meshes[mesh_index];
       vec3 surface_normal = normal;
       vec3 hit_point = hit_at(r, at);
+      // the ray direction and normal are at the same side
+      bool same_side = dot(surface_normal, r.dir) < 0.0;
 
       // the ray hit a light source.
       // a light source only emit light on the normal direction
-      if (mesh.emission != vec3(0.0) && dot(surface_normal, r.dir) < 0.0) {
+      if (mesh.emission != vec3(0.0) && same_side) {
         ret += max(r.energy * mesh.emission * mesh.intensity, vec3(1));
         r.energy = vec3(0.0);
       } else {
@@ -325,7 +327,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
 
         //     // does not hit some mesh between the light source and the surface.
         //     if (!hit_mesh(shadow_ray, 0.01, dist, at, mesh_index, normal) || mesh_index == i) {
-        //       lightColor += light.intensity * light.emission * mesh.color * max(0.0,  dot(surface_normal, shadow_ray.dir));
+        //       lightColor += light.intensity * light.emission * mesh.color * max(0.0,  dot(surfae_normal, shadow_ray.dir));
         //     }
         //   }
         // }
@@ -336,6 +338,13 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
 
         float diffuse_factor = dot(mesh.color, oneThird3);
         float specular_factor = dot(mesh.specular, oneThird3);
+
+        // no diffuse and reflection inside an object
+        if (!same_side) {
+          diffuse_factor = 0.0;
+          specular_factor = 0.0;
+        }
+
         float refraction_factor = dot(mesh.refraction, oneThird3);
         float sum = diffuse_factor + specular_factor + refraction_factor;
         diffuse_factor /= sum;
@@ -360,9 +369,10 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
           // Add different ior
           float mesh_ior = 1.5;
           // light direction is the same as the normal, exiting the object
-          if (dot(surface_normal, r.dir) > 0.0) {
+          if (!same_side) {
             k = r.ior / 1.0;
             r.ior = 1.0;
+            surface_normal = -surface_normal;
           } else {
             k = r.ior / mesh_ior;
             r.ior = mesh_ior;
