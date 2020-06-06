@@ -14,6 +14,7 @@ export default class Camera {
 
   invertPerspective: mat4;
   invertView: mat4;
+  #NDCToScreen: mat4;
 
   // direction
   private get dir() {
@@ -41,10 +42,13 @@ export default class Camera {
     this.up = up || vec3.clone([0, 1, 0]);
     this.ratio = ratio;
     this.fov = fov;
-    this.invertView = mat4.create();
-    mat4.lookAt(this.invertView, this.eye, this.at, this.up);
-    mat4.invert(this.invertView, this.invertView);
+    this.#NDCToScreen = mat4.create();
 
+    mat4.identity(this.#NDCToScreen);
+    mat4.translate(this.#NDCToScreen, this.#NDCToScreen, [-1, -1, 0]);
+    mat4.scale(this.#NDCToScreen, this.#NDCToScreen, [2, 2, 1]);
+
+    this.invertView = mat4.create();
     this.invertPerspective = mat4.create();
     this.update();
   }
@@ -57,6 +61,12 @@ export default class Camera {
 
     mat4.perspective(this.invertPerspective, this.fov, this.ratio, 0.1, 1000);
     mat4.invert(this.invertPerspective, this.invertPerspective);
+
+    mat4.multiply(
+      this.invertPerspective,
+      this.invertPerspective,
+      this.#NDCToScreen
+    );
 
     this.onChange?.(this);
   }

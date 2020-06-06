@@ -164,6 +164,7 @@ export default class Renderer {
       uSeed: gl.getUniformLocation(program, "uSeed")!,
       uViewInverse: gl.getUniformLocation(program, "uViewInverse")!,
       uProjectionInverse: gl.getUniformLocation(program, "uProjectionInverse")!,
+      uScreenToNID: gl.getUniformLocation(program, "uScreenToNID")!,
       uRenderTimes: gl.getUniformLocation(program, "uRenderTimes")!,
       uAmbient: gl.getUniformLocation(program, "uAmbient")!,
       frameTex: gl.getUniformLocation(program, "frameTex")!,
