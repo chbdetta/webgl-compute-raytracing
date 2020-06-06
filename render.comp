@@ -101,7 +101,7 @@ bool hit_triangle_at(Ray r, vec3 a, vec3 b, vec3 c, out float at) {
 
   // The ray direction and the surface normal are perpendicular
   // Allow both side of a triangle be intercepted.
-  if (denominator < EPSILON) return false;
+  if (abs(denominator) < EPSILON) return false;
 
   vec3 t = r.origin - a;
 
@@ -281,8 +281,9 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
       vec3 surface_normal = normal;
       vec3 hit_point = hit_at(r, at);
 
-      // the ray hit a light source
-      if (mesh.emission != vec3(0.0)) {
+      // the ray hit a light source.
+      // a light source only emit light on the normal direction
+      if (mesh.emission != vec3(0.0) && dot(surface_normal, r.dir) < 0.0) {
         ret += max(r.energy * mesh.emission * mesh.intensity, vec3(1));
         r.energy = vec3(0.0);
       } else {
