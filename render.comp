@@ -19,6 +19,8 @@ layout (rgba8, binding = 1) readonly uniform highp image2D accumulatedTex;
 #define M_TWO_PI 6.28318530718
 
 const vec3 zero3 = vec3(0.0);
+const vec3 one3 = vec3(1.0);
+const vec3 oneThird3 = vec3(1.0/3.0);
 
 // describe a mesh object
 struct Mesh {
@@ -35,6 +37,7 @@ struct Mesh {
   vec3 emission;
   vec3 color;
   vec3 specular;
+  vec3 refraction;
 };
 
 layout(std430, binding = 0) readonly buffer Vertices {
@@ -81,6 +84,7 @@ struct Ray {
   vec3 origin;
   vec3 dir;
   vec3 energy;
+  float ior;
 };
 
 vec3 hit_at(Ray r, float t) {
@@ -140,7 +144,20 @@ bool hit_sphere(Ray r, vec3 center, float radius, out float at) {
     return false;
   } else {
     // we only take the nearest interception point
-    at = -(b + sqrt(discriminant)) / 2.0 / a;
+    // t1 < t2
+    float t1 = -sqrt(discriminant);
+    float t2 = -t1;
+    t1 = (-b + t1) / 2.0 / a;
+    t2 = (-b + t2) / 2.0 / a;
+
+    if (t1 > 0.0) {
+      at = t1;
+    } else if (t2 > 0.0) {
+      at = t2;
+    } else {
+      return false;
+    }
+
     return true;
   }
 }
@@ -188,7 +205,7 @@ vec3 sample_hemisphere_uniform(vec3 normal, float alpha, inout float seed, vec2 
     cos_theta
   );
 
-  return get_tengent_space(normal) * dir;
+  return normalize(get_tengent_space(normal) * dir);
 }
 
 // use berymetric coordinate to get a random point on a mesh
@@ -265,6 +282,13 @@ vec3 reflect_dir(vec3 normal, vec3 dir) {
   return normalize(2.0 * dot(normal, -dir) * normal + dir);
 }
 
+vec3 refract_dir(vec3 normal, vec3 dir, float ior) {
+  float c1 = dot(normal, dir);
+  float c2 = sqrt(1.0 - ior * ior * (1.0 - c1 * c1));
+
+  return ior * dir + (ior * c1 - c2) * normal;
+}
+
 const int max_depth = 5;
 // get the color of a ray
 vec3 get_color(Ray r, inout float seed, vec2 pixel) {
@@ -310,22 +334,43 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
 
         // ret += r.energy * lightColor;
 
-        float diffuse_factor = dot(mesh.color, vec3(1.0/3.0));
-        float specular_factor = dot(mesh.specular, vec3(1.0/3.0));
-        float sum = diffuse_factor + specular_factor;
+        float diffuse_factor = dot(mesh.color, oneThird3);
+        float specular_factor = dot(mesh.specular, oneThird3);
+        float refraction_factor = dot(mesh.refraction, oneThird3);
+        float sum = diffuse_factor + specular_factor + refraction_factor;
         diffuse_factor /= sum;
         specular_factor /= sum;
+        refraction_factor /= sum;
 
         float chance = rand(seed, pixel);
 
-        r.origin = hit_point + 0.001 * surface_normal;
         if (chance < specular_factor) {
-          r.dir = normalize(sample_hemisphere_uniform(reflect_dir(surface_normal, r.dir), mesh.alpha, seed, pixel));
+          // reflective
+          r.origin = hit_point + 0.001 * surface_normal;
+          r.dir = sample_hemisphere_uniform(reflect_dir(surface_normal, r.dir), mesh.alpha, seed, pixel);
           float f = (mesh.alpha + 2.0) / (mesh.alpha + 1.0);
           r.energy *= (1.0 / specular_factor) * mesh.specular * max(0.0, dot(surface_normal, r.dir) * f);
-        } else {
-          r.dir = normalize(sample_hemisphere_uniform(surface_normal, 1.0, seed, pixel));
+        } else if (chance < specular_factor + diffuse_factor) {
+          // diffuse
+          r.origin = hit_point + 0.001 * surface_normal;
+          r.dir = sample_hemisphere_uniform(surface_normal, 1.0, seed, pixel);
           r.energy *= (1.0 / diffuse_factor) * mesh.color;
+        } else {
+          float k;
+          float mesh_ior = 1.5;
+          // light direction is the same as the normal, exiting the object
+          if (dot(surface_normal, r.dir) > 0.0) {
+            k = r.ior / 1.0;
+            r.ior = 1.0;
+          } else {
+            k = r.ior / mesh_ior;
+            r.ior = mesh_ior;
+          }
+
+          // refraction
+          r.origin = hit_point - 0.001 * surface_normal;
+          r.dir = refract_dir(surface_normal, r.dir, k);
+          r.energy *= (1.0 / refraction_factor) * mesh.refraction;
         }
       }
     } else {
@@ -350,6 +395,9 @@ Ray create_camera_ray(vec2 uv) {
   r.origin = origin;
   r.dir = dir;
   r.energy = vec3(1.0);
+  // Index of refraction of air.
+  // reference https://pixelandpoly.com/ior.html
+  r.ior = 1.0;
   return r;
 }
 

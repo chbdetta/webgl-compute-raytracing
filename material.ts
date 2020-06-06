@@ -6,6 +6,7 @@ export default class Material {
   texture?: number;
   specularExponent?: number;
   color?: Color;
+  refraction?: Color;
   private _specular?: Color;
   private specularFn?: (diffuse: Color) => Color;
 
@@ -38,6 +39,10 @@ export default class Material {
   setTexture(textureId: number) {
     this.texture = textureId;
     return this;
+  }
+
+  setRefraction(refraction: Color) {
+    this.refraction = refraction;
   }
 
   setSpecular(specular: Color | ((color: Color) => Color)) {

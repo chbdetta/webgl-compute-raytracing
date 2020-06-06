@@ -120,6 +120,11 @@ export abstract class RenderObject extends BaseObject {
     return this;
   }
 
+  setRefraction(refraction: Color) {
+    this.material.setRefraction(refraction);
+    return this;
+  }
+
   setMaterial(material: Material) {
     this.material = material;
     return this;
@@ -329,6 +334,12 @@ class Primitive extends RenderObject {
     floatArray[offset++] = this.material.specular?.r || 0;
     floatArray[offset++] = this.material.specular?.g || 0;
     floatArray[offset++] = this.material.specular?.b || 0;
+    // padding
+    offset++;
+    // vec3 refraction;
+    floatArray[offset++] = this.material.refraction?.r || 0;
+    floatArray[offset++] = this.material.refraction?.g || 0;
+    floatArray[offset++] = this.material.refraction?.b || 0;
     // padding
     offset++;
 
@@ -603,7 +614,7 @@ const rounded = (fn: (x: number) => number) => (x: number) => {
 const cos = rounded(Math.cos);
 const sin = rounded(Math.sin);
 
-const meshBytes = 16;
+const meshBytes = 20;
 
 export class Cylinder extends Primitive {
   static count = 0;
@@ -749,6 +760,12 @@ export class Sphere extends RenderObject {
     floatArray[offset++] = this.material.specular?.r || 0;
     floatArray[offset++] = this.material.specular?.g || 0;
     floatArray[offset++] = this.material.specular?.b || 0;
+    // padding
+    offset++;
+    // vec3 refraction;
+    floatArray[offset++] = this.material.refraction?.r || 0;
+    floatArray[offset++] = this.material.refraction?.g || 0;
+    floatArray[offset++] = this.material.refraction?.b || 0;
     // padding
     offset++;
 
