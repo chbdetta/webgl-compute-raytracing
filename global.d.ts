@@ -36,6 +36,7 @@ interface WebGL2RenderingContext {
 
   readonly SHADER_IMAGE_ACCESS_BARRIER_BIT: number;
   readonly TEXTURE_FETCH_BARRIER_BIT: number;
+  readonly BUFFER_UPDATE_BARRIER_BIT: number;
 }
 
 interface WebGL2Context extends WebGL2RenderingContext {

@@ -166,6 +166,25 @@ export default class Renderer {
       0
     );
 
+    gl.bindImageTexture(
+      0,
+      this.frameTexture,
+      0,
+      false,
+      0,
+      gl.READ_WRITE,
+      gl.RGBA8
+    );
+    gl.bindImageTexture(
+      1,
+      this.accumulatedTexture,
+      0,
+      false,
+      0,
+      gl.READ_WRITE,
+      gl.RGBA8
+    );
+
     // get uniforms
     this.uniforms = {
       uSeed: gl.getUniformLocation(program, "uSeed")!,
@@ -226,25 +245,6 @@ export default class Renderer {
 
     const gl = this.gl;
 
-    gl.bindImageTexture(
-      0,
-      this.frameTexture,
-      0,
-      false,
-      0,
-      gl.READ_WRITE,
-      gl.RGBA8
-    );
-    gl.bindImageTexture(
-      1,
-      this.accumulatedTexture,
-      0,
-      false,
-      0,
-      gl.READ_WRITE,
-      gl.RGBA8
-    );
-
     this.gl.useProgram(this.renderProgram);
 
     this.gl.uniform1f(this.uniforms.uSeed, Math.random());
@@ -275,19 +275,18 @@ export default class Renderer {
     );
 
     this.diff[0] = 0;
-    this.gl.bufferData(
-      this.gl.SHADER_STORAGE_BUFFER,
-      this.diff,
-      gl.DYNAMIC_DRAW
-    );
+    this.gl.bufferSubData(this.gl.SHADER_STORAGE_BUFFER, 0, this.diff);
 
     // dispatch compute work group number
     this.gl.dispatchCompute(this.width / LOCAL_X, this.height / LOCAL_Y, 1);
-    // wait
-    this.gl.memoryBarrier(this.gl.TEXTURE_FETCH_BARRIER_BIT);
 
     // read the diff
     this.gl.getBufferSubData(this.gl.SHADER_STORAGE_BUFFER, 0, this.diff);
+
+    // wait
+    this.gl.memoryBarrier(
+      this.gl.TEXTURE_FETCH_BARRIER_BIT | this.gl.BUFFER_UPDATE_BARRIER_BIT
+    );
 
     // When the difference between frame is small enough, the image is completed.
     if (this.diff[0] < this.width * this.height * 0.0000001) {

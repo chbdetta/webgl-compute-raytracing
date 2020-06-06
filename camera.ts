@@ -9,8 +9,8 @@ export default class Camera {
   fov: number;
   // moving speed
   private speed = 0.1;
-
   private mouseSensitivity = 0.05;
+  #panMatrix: mat4;
 
   invertPerspective: mat4;
   invertView: mat4;
@@ -43,6 +43,7 @@ export default class Camera {
     this.ratio = ratio;
     this.fov = fov;
     this.#NDCToScreen = mat4.create();
+    this.#panMatrix = mat4.create();
 
     mat4.identity(this.#NDCToScreen);
     mat4.translate(this.#NDCToScreen, this.#NDCToScreen, [-1, -1, 0]);
@@ -92,7 +93,7 @@ export default class Camera {
   }
 
   walkForward() {
-    const step = vec3.clone([this.dir[0], 0, this.dir[2]]);
+    const step: vec3 = [this.dir[0], 0, this.dir[2]];
     vec3.scale(step, step, this.speed);
 
     vec3.add(this.eye, this.eye, step);
@@ -102,7 +103,7 @@ export default class Camera {
   }
 
   walkBackward() {
-    const step = vec3.clone([this.dir[0], 0, this.dir[2]]);
+    const step: vec3 = [this.dir[0], 0, this.dir[2]];
     vec3.scale(step, step, -this.speed);
 
     vec3.add(this.eye, this.eye, step);
@@ -147,23 +148,22 @@ export default class Camera {
   }
 
   pan(x: number, y: number) {
-    const mat = mat4.create();
-
+    mat4.identity(this.#panMatrix);
     mat4.rotate(
-      mat,
-      mat,
+      this.#panMatrix,
+      this.#panMatrix,
       -((x * this.mouseSensitivity) / 180) * Math.PI,
       this.up
     );
     mat4.rotate(
-      mat,
-      mat,
+      this.#panMatrix,
+      this.#panMatrix,
       -((y * this.mouseSensitivity) / 180) * Math.PI,
       this.side
     );
 
     const dir = this.dir;
-    vec3.transformMat4(dir, dir, mat);
+    vec3.transformMat4(dir, dir, this.#panMatrix);
     vec3.add(this.at, this.eye, dir);
     this.update();
   }
