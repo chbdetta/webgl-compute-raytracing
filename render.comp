@@ -346,17 +346,18 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
 
         if (chance < specular_factor) {
           // reflective
-          r.origin = hit_point + 0.001 * surface_normal;
+          r.origin = hit_point + 0.01 * surface_normal;
           r.dir = sample_hemisphere_uniform(reflect_dir(surface_normal, r.dir), mesh.alpha, seed, pixel);
           float f = (mesh.alpha + 2.0) / (mesh.alpha + 1.0);
           r.energy *= (1.0 / specular_factor) * mesh.specular * max(0.0, dot(surface_normal, r.dir) * f);
         } else if (chance < specular_factor + diffuse_factor) {
           // diffuse
-          r.origin = hit_point + 0.001 * surface_normal;
+          r.origin = hit_point + 0.01 * surface_normal;
           r.dir = sample_hemisphere_uniform(surface_normal, 1.0, seed, pixel);
           r.energy *= (1.0 / diffuse_factor) * mesh.color;
         } else {
           float k;
+          // Add different ior
           float mesh_ior = 1.5;
           // light direction is the same as the normal, exiting the object
           if (dot(surface_normal, r.dir) > 0.0) {
@@ -368,7 +369,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
           }
 
           // refraction
-          r.origin = hit_point - 0.001 * surface_normal;
+          r.origin = hit_point - 0.01 * surface_normal;
           r.dir = refract_dir(surface_normal, r.dir, k);
           r.energy *= (1.0 / refraction_factor) * mesh.refraction;
         }
