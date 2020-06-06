@@ -289,14 +289,14 @@ vec3 refract_dir(vec3 normal, vec3 dir, float ior) {
   return ior * dir + (ior * c1 - c2) * normal;
 }
 
-const int max_depth = 8;
+const int max_depth = 10;
 // get the color of a ray
 vec3 get_color(Ray r, inout float seed, vec2 pixel) {
   int depth = 0;
   float at;
   int mesh_index;
   vec3 normal;
-  vec3 ret = vec3(0.0);
+  vec3 ret = zero3;
 
   while (depth < max_depth && length(r.energy) > EPSILON) {
     if (hit_mesh(r, 0.01, MAX_FLOAT, at, mesh_index, normal)) {
@@ -308,34 +308,15 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
       bool same_side = dot(surface_normal, r.dir) < 0.0;
 
       // the ray hit a light source.
+      if (mesh.emission != zero3) {
       // a light source only emit light on the normal direction
-      if (mesh.emission != vec3(0.0) && same_side) {
+        if (same_side) {
         ret += max(r.energy * mesh.emission * mesh.intensity, vec3(1));
-        r.energy = vec3(0.0);
+        } else {
+          ret += zero3;
+        }
+        r.energy = zero3;
       } else {
-        // vec3 lightColor = vec3(0);
-        // send shadow ray to all light sources
-        // for (int i = 0; i < meshes.length(); i++) {
-        //   Mesh light = meshes[i];
-        //   if (light.emission != vec3(0.0)) {
-        //     Ray shadow_ray;
-        //     vec3 light_dir = random_point_on_mesh(light, seed, pixel) - hit_point;
-        //     shadow_ray.origin = hit_point;
-        //     shadow_ray.dir = normalize(light_dir);
-
-        //     float dist = length(light_dir);
-
-        //     // does not hit some mesh between the light source and the surface.
-        //     if (!hit_mesh(shadow_ray, 0.01, dist, at, mesh_index, normal) || mesh_index == i) {
-        //       lightColor += light.intensity * light.emission * mesh.color * max(0.0,  dot(surfae_normal, shadow_ray.dir));
-        //     }
-        //   }
-        // }
-
-        // lightColor = min(lightColor, vec3(1));
-
-        // ret += r.energy * lightColor;
-
         float diffuse_factor = dot(mesh.color, oneThird3);
         float specular_factor = dot(mesh.specular, oneThird3);
 
@@ -347,6 +328,12 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
 
         float refraction_factor = dot(mesh.refraction, oneThird3);
         float sum = diffuse_factor + specular_factor + refraction_factor;
+
+        if (sum == 0.0) {
+          // no refraction, no diffuse and no reflection.
+          // stop the light bounce
+          r.energy = zero3;
+        } else {
         diffuse_factor /= sum;
         specular_factor /= sum;
         refraction_factor /= sum;
@@ -384,10 +371,11 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
           r.energy *= (1.0 / refraction_factor) * mesh.refraction;
         }
       }
+      }
     } else {
       // hit nothing, we give an ambient light
       ret += r.energy * uAmbient;
-      r.energy = vec3(0.0);
+      r.energy = zero3;
     }
 
     depth ++;
