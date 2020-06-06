@@ -490,7 +490,7 @@ export const worlds = {
           .translate(1, 1, -1)
           .rotate(50, 1, 0.2, 0.4)
           // .setColor(new Color(0.6, 0.7, 1))
-          .setSpecular(Color.GRAY)
+          .setSpecular(Color.WHITE.mul(0.1))
           .setRefraction(Color.WHITE)
           .commit()
       );
@@ -498,6 +498,14 @@ export const worlds = {
         new Cylinder(20)
           .setColor(new Color(0.6, 0.7, 1))
           .setSpecular(Color.WHITE)
+          .commit()
+      );
+      this.addObject(
+        new Tetrahedron()
+          .translate(1, 0, -1.5)
+          .rotate(50, 1, 0.2, 0.4)
+          .setRefraction(Color.WHITE)
+          .setSpecular(Color.WHITE.mul(0.1))
           .commit()
       );
       this.addObject(
