@@ -454,9 +454,9 @@ export const worlds = {
       this.addObject(
         new Sphere()
           .translate(-2, 0, -4)
-          .setColor(Color.BLACK)
-          .setSpecular(Color.WHITE)
+          .setSpecular(Color.GRAY)
           .setSpecularExponent(Material.MIRROR)
+          .setRefraction(Color.WHITE)
           .commit()
       );
       this.addObject(
@@ -486,6 +486,16 @@ export const worlds = {
       );
       this.addObject(
         new Cylinder(20)
+          .scale(1.5)
+          .translate(1, 1, -1)
+          .rotate(50, 1, 0.2, 0.4)
+          // .setColor(new Color(0.6, 0.7, 1))
+          .setSpecular(Color.GRAY)
+          .setRefraction(Color.WHITE)
+          .commit()
+      );
+      this.addObject(
+        new Cylinder(20)
           .setColor(new Color(0.6, 0.7, 1))
           .setSpecular(Color.WHITE)
           .commit()
@@ -502,6 +512,7 @@ export const worlds = {
         new Cube()
           .translate(-2, 0, 1)
           .commit()
+          .setRefraction(new Color(1, 0.8, 0.5))
           .setColor(new Color(0.8, 0.6, 0.3))
       );
       this.addObject(
