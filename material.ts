@@ -10,7 +10,7 @@ export default class Material {
   private _specular?: Color;
   private specularFn?: (diffuse: Color) => Color;
 
-  static MIRROR = 1000000;
+  static MIRROR = 1000 ** 10;
 
   get specular(): Color | undefined {
     if (this._specular) {
