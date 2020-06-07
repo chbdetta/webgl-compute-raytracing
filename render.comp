@@ -289,10 +289,10 @@ vec3 refract_dir(vec3 normal, vec3 dir, float ior) {
   return ior * dir + (ior * c1 - c2) * normal;
 }
 
-const int max_depth = 10;
+const int max_depth = 6;
 // get the color of a ray
 vec3 get_color(Ray r, inout float seed, vec2 pixel) {
-  int depth = 0;
+  int depth = 1;
   float at;
   int mesh_index;
   vec3 normal;
@@ -311,29 +311,35 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
       if (mesh.emission != zero3) {
       // a light source only emit light on the normal direction
         if (same_side) {
-        ret += max(r.energy * mesh.emission * mesh.intensity, vec3(1));
+        ret += r.energy * mesh.emission * mesh.intensity;
         } else {
           ret += zero3;
         }
+
+        // r.energy = zero3;
+
+        if (depth == 1) {
+          depth -= 1;
+        }
+      }
+
+      float diffuse_factor = dot(mesh.color, oneThird3);
+      float specular_factor = dot(mesh.specular, oneThird3);
+
+      // no diffuse and reflection inside an object
+      if (!same_side) {
+        diffuse_factor = 0.0;
+        specular_factor = 0.0;
+      }
+
+      float refraction_factor = dot(mesh.refraction, oneThird3);
+      float sum = diffuse_factor + specular_factor + refraction_factor;
+
+      if (sum == 0.0) {
+        // no refraction, no diffuse and no reflection.
+        // stop the light bounce
         r.energy = zero3;
       } else {
-        float diffuse_factor = dot(mesh.color, oneThird3);
-        float specular_factor = dot(mesh.specular, oneThird3);
-
-        // no diffuse and reflection inside an object
-        if (!same_side) {
-          diffuse_factor = 0.0;
-          specular_factor = 0.0;
-        }
-
-        float refraction_factor = dot(mesh.refraction, oneThird3);
-        float sum = diffuse_factor + specular_factor + refraction_factor;
-
-        if (sum == 0.0) {
-          // no refraction, no diffuse and no reflection.
-          // stop the light bounce
-          r.energy = zero3;
-        } else {
         diffuse_factor /= sum;
         specular_factor /= sum;
         refraction_factor /= sum;
@@ -370,8 +376,8 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
           r.dir = refract_dir(surface_normal, r.dir, k);
           r.energy *= (1.0 / refraction_factor) * mesh.refraction;
         }
-      }
-      }
+    }
+ 
     } else {
       // hit nothing, we give an ambient light
       ret += r.energy * uAmbient;
