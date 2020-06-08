@@ -90,9 +90,6 @@ export default class Primitive extends RenderObject {
       face.transformNormal(this.modelMatrix);
     }
 
-    // generate the bounding box
-    this.bbox = new BoundingBox(this);
-
     mat4.identity(this.modelMatrix);
     return this;
   }
@@ -102,6 +99,9 @@ export default class Primitive extends RenderObject {
       console.warn("Modifying the object after freezing");
       return [0, 1] as [number, number];
     }
+
+    // generate the bounding box
+    this.bbox = new BoundingBox(this);
 
     const size = 4;
     const data = (this.data = new Float32Array(
@@ -187,13 +187,13 @@ export default class Primitive extends RenderObject {
     // bounding box
     floatArray[offset++] = this.bbox!.min[0];
     floatArray[offset++] = this.bbox!.min[1];
-    floatArray[offset++] = this.bbox!.min[3];
+    floatArray[offset++] = this.bbox!.min[2];
     // padding
     offset++;
     // bounding box
     floatArray[offset++] = this.bbox!.max[0];
     floatArray[offset++] = this.bbox!.max[1];
-    floatArray[offset++] = this.bbox!.max[3];
+    floatArray[offset++] = this.bbox!.max[2];
     // padding
     offset++;
 

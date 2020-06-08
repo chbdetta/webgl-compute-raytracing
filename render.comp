@@ -181,47 +181,50 @@ bool hit_sphere(Ray r, vec3 center, float radius, out float at) {
 }
 
 bool hit_bbox(Ray r, vec3 bmin, vec3 bmax, out float t) {
-  float bminx = bmin.x;
-  float bmaxx = bmax.x;
-  float bminy = bmin.y;
-  float bmaxy = bmax.y;
+  float t_min;
+  float t_max;
+  vec3 invdir = one3 / r.dir;
 
   if (r.dir.x < 0.0) {
-    bminx = bmax.x;
-    bmaxx = bmin.x;
+    t_min = (bmax.x - r.origin.x) * invdir.x;
+    t_max = (bmin.x - r.origin.x) * invdir.x;
+  } else {
+    t_min = (bmin.x - r.origin.x) * invdir.x;
+    t_max = (bmax.x - r.origin.x) * invdir.x;
   }
 
+  float ty_min;
+  float ty_max;
   if (r.dir.y < 0.0) {
-    bminy = bmax.y;
-    bmaxy = bmin.y;
+    ty_min = (bmax.y - r.origin.y) * invdir.y;
+    ty_max = (bmin.y - r.origin.y) * invdir.y;
+  } else {
+    ty_min = (bmin.y - r.origin.y) * invdir.y;
+    ty_max = (bmax.y - r.origin.y) * invdir.y;
   }
 
-  float x_min = (bminx - r.origin.x) / r.dir.x;
-  float x_max = (bmaxx - r.origin.x) / r.dir.x;
+  if ((t_min > ty_max) || (ty_min > t_max)) return false;
 
-  float y_min = (bminy - r.origin.y) / r.dir.y;
-  float y_max = (bmaxy - r.origin.y) / r.dir.y;
+  t_min = max(t_min, ty_min);
+  t_max = min(t_max, ty_max);
 
-  if (x_min > y_max || y_min > x_max) return false;
-
-  float t_min = max(x_min, y_min);
-  float t_max = min(x_max, y_max);
-
-  float bminz = bmin.z;
-  float bmaxz = bmax.z;
-
-  if (r.dir.y < 0.0) {
-    bminz = bmax.z;
-    bmaxz = bmin.z;
+  float tz_min;
+  float tz_max;
+  if (r.dir.z < 0.0) {
+    tz_min = (bmax.z - r.origin.z) * invdir.z;
+    tz_max = (bmin.z - r.origin.z) * invdir.z;
+  } else {
+    tz_min = (bmin.z - r.origin.z) * invdir.z;
+    tz_max = (bmax.z - r.origin.z) * invdir.z;
   }
 
-  float z_min = (bminz - r.origin.z) / r.dir.z;
-  float z_max = (bmaxz - r.origin.z) / r.dir.z;
 
-  if (t_min > z_max || z_min > t_max) return false;
+  if (t_min > tz_max || tz_min > t_max) return false;
 
-  if (z_min > t_min) t_min = z_min;
-  if (z_max < t_max) t_max = z_max;
+  t_min = max(t_min, tz_min);
+  t_max = min(t_max, tz_max);
+
+  t = t_min;
 
   return true;
 }
