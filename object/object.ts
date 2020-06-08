@@ -8,7 +8,7 @@ export { RenderCallback };
 
 // A virtual object that doesn't have any vertices
 export class Group extends RenderObject {
-  children: (Group | Primitive)[] = [];
+  children: RenderObject[] = [];
 
   static count = 0;
 
@@ -16,7 +16,7 @@ export class Group extends RenderObject {
     super(name);
   }
 
-  addChild(child: Group | Primitive) {
+  addChild(child: RenderObject) {
     // TODO: Deal with duplicate children name
     child.parent = this as RenderObject;
     this.children.push(child);
@@ -400,5 +400,13 @@ export class Sphere extends RenderObject {
 
     mat4.identity(this.modelMatrix);
     return this;
+  }
+
+  clone() {
+    const s = new Sphere();
+    s.origin = vec3.clone(this.origin);
+    s.normal = vec3.clone(this.normal);
+
+    return s;
   }
 }

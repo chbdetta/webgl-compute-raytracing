@@ -95,4 +95,6 @@ export default abstract class RenderObject extends BaseObject {
   child(name: string): RenderObject {
     return void 0 as any;
   }
+
+  abstract clone(preserveModelMatrix: boolean): RenderObject;
 }
