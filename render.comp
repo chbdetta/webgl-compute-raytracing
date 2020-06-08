@@ -454,15 +454,14 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
           r.dir = refract_dir(surface_normal, r.dir, k);
           r.energy *= (1.0 / refraction_factor) * mesh.refraction;
         }
-    }
- 
+      }
+      depth ++;
+
     } else {
       // hit nothing, we give an ambient light
       ret += r.energy * uAmbient;
       r.energy = zero3;
     }
-
-    depth ++;
   }
 
   float f_depth = float(depth);
