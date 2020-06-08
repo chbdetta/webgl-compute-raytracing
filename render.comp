@@ -53,6 +53,7 @@ layout(std430, binding = 1) readonly buffer Meshes {
 
 struct Stats {
   float diff;
+  float mainRay;
   float rayCount;
   float rayTest;
   float rayIntersection;
@@ -60,6 +61,7 @@ struct Stats {
 
 layout(std430, binding = 2) buffer Stats_SSBO {
   float diff[LOCALX * LOCALY];
+  float mainRay[LOCALX * LOCALY];
   float rayCount[LOCALX * LOCALY];
   float rayTest[LOCALX * LOCALY];
   float rayIntersection[LOCALX * LOCALY];
@@ -444,6 +446,7 @@ void main() {
   uint id = gl_LocalInvocationIndex;
 
   Stats stat;
+  stat.mainRay = 1.0;
 
   vec3 color = get_color(r, seed, uv, stat);
 
@@ -460,6 +463,7 @@ void main() {
   }
 
   diff[id] += stat.diff;
+  mainRay[id] += stat.mainRay;
   rayCount[id] += stat.rayCount;
   rayTest[id] += stat.rayTest;
   rayIntersection[id] += stat.rayIntersection;

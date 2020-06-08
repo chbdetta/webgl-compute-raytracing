@@ -24,23 +24,23 @@ function main() {
   renderer.world = worlds.test;
   renderer.world.camera.setRatio(WIDTH / HEIGHT);
 
-  document.getElementById(
-    "resolution"
-  )!.innerText = `${renderer.width} x ${renderer.height}`;
-
   const tick = () => {
     renderer.render();
 
+    document.getElementById("main-rays")!.innerText = String(
+      renderer.stats.mainRay
+    );
+
     document.getElementById("rays")!.innerText = String(
-      ~~renderer.stats.rayCount
+      renderer.stats.rayCount
     );
 
     document.getElementById("ray-test")!.innerText = String(
-      ~~renderer.stats.rayTest
+      renderer.stats.rayTest
     );
 
     document.getElementById("ray-intersect")!.innerText = String(
-      ~~renderer.stats.rayIntersection
+      renderer.stats.rayIntersection
     );
 
     document.getElementById("fps")!.innerText = renderer.stats.fps.toFixed(2);

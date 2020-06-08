@@ -1,5 +1,5 @@
 class Stats {
-  static ItemSize = 4;
+  static ItemSize = 5;
 
   width: number;
   height: number;
@@ -18,16 +18,20 @@ class Stats {
     return this.data[0];
   }
 
-  get rayCount() {
+  get mainRay() {
     return this.data[1];
   }
 
-  get rayTest() {
+  get rayCount() {
     return this.data[2];
   }
 
-  get rayIntersection() {
+  get rayTest() {
     return this.data[3];
+  }
+
+  get rayIntersection() {
+    return this.data[4];
   }
 
   get fps() {
@@ -40,7 +44,11 @@ class Stats {
     for (let i = 0; i < Stats.ItemSize; i++) {
       this.data[i] = this.buffer[i * localSize];
       for (let j = 1; j < this.buffer.length / Stats.ItemSize; j++) {
-        this.data[i] += (this.buffer[i * localSize + j] - this.data[i]) / j;
+        if (i === 0) {
+          this.data[i] += (this.buffer[i * localSize + j] - this.data[i]) / j;
+        } else {
+          this.data[i] += this.buffer[i * localSize + j];
+        }
       }
     }
   }
