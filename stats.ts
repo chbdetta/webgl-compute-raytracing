@@ -1,26 +1,54 @@
-const size = 2;
+class Stats {
+  static ItemSize = 4;
 
-const stats = {
-  buffer: new Float32Array(size),
+  width: number;
+  height: number;
+
+  buffer: Float32Array;
+  data: number[];
+  prev = 0;
+  delta = 0;
+
+  constructor(localX: number, localY: number) {
+    this.buffer = new Float32Array(Stats.ItemSize * localX * localY);
+    this.data = new Array(4).fill(0);
+  }
+
   get diff() {
-    return stats.buffer[0];
-  },
-  set diff(v: number) {
-    stats.buffer[0] = v;
-  },
+    return this.data[0];
+  }
 
   get rayCount() {
-    return stats.buffer[1];
-  },
-  set rayCount(v: number) {
-    stats.buffer[1] = v;
-  },
+    return this.data[1];
+  }
 
-  prev: 0,
-  delta: 0,
+  get rayTest() {
+    return this.data[2];
+  }
+
+  get rayIntersection() {
+    return this.data[3];
+  }
+
   get fps() {
-    return 1000 / stats.delta;
-  },
-};
+    return 1000 / this.delta;
+  }
 
-export default stats;
+  reduce() {
+    const localSize = this.buffer.length / Stats.ItemSize;
+
+    for (let i = 0; i < Stats.ItemSize; i++) {
+      this.data[i] = this.buffer[i * localSize];
+      for (let j = 1; j < this.buffer.length / Stats.ItemSize; j++) {
+        this.data[i] += (this.buffer[i * localSize + j] - this.data[i]) / j;
+      }
+    }
+  }
+
+  reset() {
+    this.buffer.fill(0);
+    this.data.fill(0);
+  }
+}
+
+export default Stats;

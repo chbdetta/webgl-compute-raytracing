@@ -32,7 +32,15 @@ function main() {
     renderer.render();
 
     document.getElementById("rays")!.innerText = String(
-      renderer.stats.rayCount
+      ~~renderer.stats.rayCount
+    );
+
+    document.getElementById("ray-test")!.innerText = String(
+      ~~renderer.stats.rayTest
+    );
+
+    document.getElementById("ray-intersect")!.innerText = String(
+      ~~renderer.stats.rayIntersection
     );
 
     document.getElementById("fps")!.innerText = renderer.stats.fps.toFixed(2);

@@ -3,7 +3,7 @@
 import computeShader from "./render.comp";
 import blitShader from "./blit.comp";
 import World from "world";
-import stats from "./stats";
+import Stats from "./stats";
 
 // 2D local invocation
 const LOCAL_X = 16;
@@ -18,7 +18,7 @@ type Buffer = {
 export default class Renderer {
   renderTimes: number = 0;
 
-  stats: typeof stats;
+  stats: Stats;
 
   gl: WebGL2Context;
   renderProgram: WebGLProgram;
@@ -76,7 +76,7 @@ export default class Renderer {
       throw new Error("can not get webgl2 compute context");
     }
 
-    this.stats = stats;
+    this.stats = new Stats(LOCAL_X, LOCAL_Y);
 
     this.completed = false;
 
@@ -232,7 +232,7 @@ export default class Renderer {
       let data;
       let mode;
       if (name === "stats") {
-        data = stats.buffer;
+        data = this.stats.buffer;
         mode = gl.DYNAMIC_DRAW;
       } else {
         data = this.#world[name];
@@ -277,28 +277,35 @@ export default class Renderer {
       this.buffers.stats!.buffer
     );
 
-    stats.diff = 0;
-    stats.rayCount = 0;
-    stats.prev = performance.now();
+    this.stats.reset();
 
-    this.gl.bufferSubData(this.gl.SHADER_STORAGE_BUFFER, 0, stats.buffer);
+    // for fps
+    this.stats.prev = performance.now();
+
+    this.gl.bufferSubData(this.gl.SHADER_STORAGE_BUFFER, 0, this.stats.buffer);
 
     // dispatch compute work group number
     this.gl.dispatchCompute(this.width / LOCAL_X, this.height / LOCAL_Y, 1);
 
     // read the diff
-    this.gl.getBufferSubData(this.gl.SHADER_STORAGE_BUFFER, 0, stats.buffer);
+    this.gl.getBufferSubData(
+      this.gl.SHADER_STORAGE_BUFFER,
+      0,
+      this.stats.buffer
+    );
+
+    this.stats.reduce();
 
     // wait
     this.gl.memoryBarrier(
       this.gl.TEXTURE_FETCH_BARRIER_BIT | this.gl.BUFFER_UPDATE_BARRIER_BIT
     );
 
-    stats.delta = performance.now() - stats.prev;
+    this.stats.delta = performance.now() - this.stats.prev;
 
     // When the difference between frame is small enough, the image is completed.
-    if (stats.diff < this.width * this.height * 0.0000001) {
-      console.log("complete with frame difference:", stats.diff);
+    if (this.stats.diff < this.width * this.height * 0.0000001) {
+      console.log("complete with frame difference:", this.stats.diff);
       this.completed = true;
     }
 

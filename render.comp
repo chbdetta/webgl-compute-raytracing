@@ -8,6 +8,9 @@ precision highp float;
 precision highp int;
 precision mediump image2DArray;
 
+const int LOCALX = 16;
+const int LOCALY = 16;
+
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout (rgba8, binding = 0) writeonly uniform highp image2D frameTex;
@@ -48,9 +51,18 @@ layout(std430, binding = 1) readonly buffer Meshes {
   Mesh meshes[];
 };
 
-layout(std430, binding = 2) buffer Stats {
+struct Stats {
   float diff;
   float rayCount;
+  float rayTest;
+  float rayIntersection;
+};
+
+layout(std430, binding = 2) buffer Stats_SSBO {
+  float diff[LOCALX * LOCALY];
+  float rayCount[LOCALX * LOCALY];
+  float rayTest[LOCALX * LOCALY];
+  float rayIntersection[LOCALX * LOCALY];
 };
 
 uniform float uSeed;
@@ -239,7 +251,7 @@ vec3 random_point_on_mesh(Mesh m, inout float seed, vec2 pixel) {
   return a * t + b * u + c * v;
 }
 
-bool hit_mesh(Ray r, float at_min, float at_max, inout float at, out int index, out vec3 normal) {
+bool hit_mesh(Ray r, float at_min, float at_max, inout float at, out int index, out vec3 normal, inout Stats stats) {
   index = -1;
   at = at_max;
   bool hit = false;
@@ -254,11 +266,13 @@ bool hit_mesh(Ray r, float at_min, float at_max, inout float at, out int index, 
       vec3 b = vertices[offset + 1];
 
       if (hit_sphere(r, a, length(b), t) && t >= at_min && t < at_max && t < at) {
+        stats.rayIntersection += 1.0;
         hit = true; 
         at = t;
         index = i;
         normal = normalize(hit_at(r, t) - a);
       }
+      stats.rayTest += 1.0;
     } else {
       for (int j = 0; j < mesh.face_count; ++j) {
 
@@ -267,12 +281,15 @@ bool hit_mesh(Ray r, float at_min, float at_max, inout float at, out int index, 
         vec3 c = vertices[j * 3 + offset + 2];
 
         if (hit_triangle_at(r, a, b, c, t) && t >= at_min && t < at_max && t < at) {
+          stats.rayIntersection += 1.0;
           hit = true; 
           at = t;
           index = i;
           normal = normalize(cross(b - a, c - a));
         }
       }
+
+      stats.rayTest += float(mesh.face_count);
     }
   }
 
@@ -292,7 +309,7 @@ vec3 refract_dir(vec3 normal, vec3 dir, float ior) {
 
 const int max_depth = 6;
 // get the color of a ray
-vec3 get_color(Ray r, inout float seed, vec2 pixel) {
+vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
   int depth = 1;
   float at;
   int mesh_index;
@@ -300,7 +317,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
   vec3 ret = zero3;
 
   while (depth < max_depth && length(r.energy) > EPSILON) {
-    if (hit_mesh(r, 0.01, MAX_FLOAT, at, mesh_index, normal)) {
+    if (hit_mesh(r, 0.01, MAX_FLOAT, at, mesh_index, normal, stats)) {
 
       Mesh mesh = meshes[mesh_index];
       vec3 surface_normal = normal;
@@ -390,7 +407,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
 
   float f_depth = float(depth);
 
-  rayCount += f_depth;
+  stats.rayCount += f_depth;
 
   return ret / f_depth;
 }
@@ -424,18 +441,28 @@ void main() {
 
   Ray r = create_camera_ray(sample_pos);
 
-  vec3 color = get_color(r, seed, uv);
+  uint id = gl_LocalInvocationIndex;
+
+  Stats stat;
+
+  vec3 color = get_color(r, seed, uv, stat);
+
   if (uRenderTimes != 0) {
     vec3 initColor = imageLoad(accumulatedTex, storePos).rgb;
     vec3 d = (color - initColor) / float(uRenderTimes);
 
     // output the frame difference
-    diff += dot(d, d);
+    stat.diff += dot(d, d);
 
     color = initColor + d;
   } else {
-    diff += 1.0;
+    stat.diff += 1.0;
   }
+
+  diff[id] += stat.diff;
+  rayCount[id] += stat.rayCount;
+  rayTest[id] += stat.rayTest;
+  rayIntersection[id] += stat.rayIntersection;
 
   imageStore(frameTex, storePos, vec4(color, 1.0));
 }
