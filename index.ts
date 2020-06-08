@@ -24,8 +24,18 @@ function main() {
   renderer.world = worlds.test;
   renderer.world.camera.setRatio(WIDTH / HEIGHT);
 
+  document.getElementById(
+    "resolution"
+  )!.innerText = `${renderer.width} x ${renderer.height}`;
+
   const tick = () => {
     renderer.render();
+
+    document.getElementById("rays")!.innerText = String(
+      renderer.stats.rayCount
+    );
+
+    document.getElementById("fps")!.innerText = renderer.stats.fps.toFixed(2);
 
     requestAnimationFrame(tick);
   };

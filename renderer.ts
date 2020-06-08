@@ -3,6 +3,7 @@
 import computeShader from "./render.comp";
 import blitShader from "./blit.comp";
 import World from "world";
+import stats from "./stats";
 
 // 2D local invocation
 const LOCAL_X = 16;
@@ -17,6 +18,8 @@ type Buffer = {
 export default class Renderer {
   renderTimes: number = 0;
 
+  stats: typeof stats;
+
   gl: WebGL2Context;
   renderProgram: WebGLProgram;
   blitProgram: WebGLProgram;
@@ -28,14 +31,13 @@ export default class Renderer {
   buffers: {
     vertices: Buffer | null;
     meshes: Buffer | null;
-    diff: Buffer | null;
+    stats: Buffer | null;
   } = {
     vertices: null,
     meshes: null,
-    diff: null,
+    stats: null,
   };
 
-  diff: Float32Array;
   completed: boolean;
 
   frameTexture: WebGLTexture;
@@ -74,7 +76,8 @@ export default class Renderer {
       throw new Error("can not get webgl2 compute context");
     }
 
-    this.diff = new Float32Array(1);
+    this.stats = stats;
+
     this.completed = false;
 
     [this.renderProgram, this.blitProgram] = this.init({
@@ -203,10 +206,10 @@ export default class Renderer {
   sendBuffer() {
     if (!this.#world) return;
 
-    const buffers: ["vertices", "meshes", "diff"] = [
+    const buffers: ["vertices", "meshes", "stats"] = [
       "vertices",
       "meshes",
-      "diff",
+      "stats",
     ];
 
     // create and bind buffers
@@ -228,8 +231,8 @@ export default class Renderer {
 
       let data;
       let mode;
-      if (name === "diff") {
-        data = new Float32Array(1);
+      if (name === "stats") {
+        data = stats.buffer;
         mode = gl.DYNAMIC_DRAW;
       } else {
         data = this.#world[name];
@@ -271,26 +274,31 @@ export default class Renderer {
     // reset diff to 0
     this.gl.bindBuffer(
       this.gl.SHADER_STORAGE_BUFFER,
-      this.buffers.diff!.buffer
+      this.buffers.stats!.buffer
     );
 
-    this.diff[0] = 0;
-    this.gl.bufferSubData(this.gl.SHADER_STORAGE_BUFFER, 0, this.diff);
+    stats.diff = 0;
+    stats.rayCount = 0;
+    stats.prev = performance.now();
+
+    this.gl.bufferSubData(this.gl.SHADER_STORAGE_BUFFER, 0, stats.buffer);
 
     // dispatch compute work group number
     this.gl.dispatchCompute(this.width / LOCAL_X, this.height / LOCAL_Y, 1);
 
     // read the diff
-    this.gl.getBufferSubData(this.gl.SHADER_STORAGE_BUFFER, 0, this.diff);
+    this.gl.getBufferSubData(this.gl.SHADER_STORAGE_BUFFER, 0, stats.buffer);
 
     // wait
     this.gl.memoryBarrier(
       this.gl.TEXTURE_FETCH_BARRIER_BIT | this.gl.BUFFER_UPDATE_BARRIER_BIT
     );
 
+    stats.delta = performance.now() - stats.prev;
+
     // When the difference between frame is small enough, the image is completed.
-    if (this.diff[0] < this.width * this.height * 0.0000001) {
-      console.log("complete with frame difference:", this.diff[0]);
+    if (stats.diff < this.width * this.height * 0.0000001) {
+      console.log("complete with frame difference:", stats.diff);
       this.completed = true;
     }
 

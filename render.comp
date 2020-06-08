@@ -48,8 +48,9 @@ layout(std430, binding = 1) readonly buffer Meshes {
   Mesh meshes[];
 };
 
-layout(std430, binding = 2) buffer Diff {
+layout(std430, binding = 2) buffer Stats {
   float diff;
+  float rayCount;
 };
 
 uniform float uSeed;
@@ -387,7 +388,11 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel) {
     depth ++;
   }
 
-  return ret / float(depth);
+  float f_depth = float(depth);
+
+  rayCount += f_depth;
+
+  return ret / f_depth;
 }
 
 Ray create_camera_ray(vec2 uv) {

@@ -427,13 +427,13 @@ export const worlds = {
     "test",
     new Camera(12 / 8, [0, 0, -10], [0, 0, 0]),
     function () {
-      this.ambient = new Color(0, 0.1, 0.2);
+      this.ambient = new Color(0, 0.05, 0.15);
 
       this.addObject(
         new Rectangle("wall-light")
           .translate(0, 0, 5)
           .rotate(180, 0, 1, 0)
-          .scale(3)
+          .scale(10)
           .setEmission(new Color(1, 1, 0.9))
           .setEmissionIntensity(2)
           .commit()
@@ -512,8 +512,8 @@ export const worlds = {
         new Cube()
           .translate(0, 0.5, -2)
           .scale(0.5)
-          .setEmission(Color.RED)
-          .setEmissionIntensity(2)
+          .setEmission(new Color(1, 0.1, 0.1))
+          .setEmissionIntensity(5)
           .commit()
       );
       this.addObject(
@@ -528,14 +528,16 @@ export const worlds = {
           .translate(0, -0.5, 0)
           .rotate(-90, 1, 0, 0)
           .scale(100)
+          .setColor(Color.WHITE.mul(0.8))
           .setSpecular(Color.WHITE)
-          .setSpecularExponent(5000)
+          .setSpecularExponent(Material.MIRROR)
           .commit()
       );
       this.addObject(
         new Rectangle("wall")
           .translate(0, 0, -12)
           .scale(8)
+          .setColor(Color.BLACK)
           .setSpecular(Color.WHITE)
           .setSpecularExponent(Material.MIRROR)
           .commit()
