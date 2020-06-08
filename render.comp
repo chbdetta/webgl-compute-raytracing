@@ -41,6 +41,9 @@ struct Mesh {
   vec3 color;
   vec3 specular;
   vec3 refraction;
+  // bounding box
+  vec3 bbox_min;
+  vec3 bbox_max;
 };
 
 layout(std430, binding = 0) readonly buffer Vertices {
@@ -177,6 +180,52 @@ bool hit_sphere(Ray r, vec3 center, float radius, out float at) {
   }
 }
 
+bool hit_bbox(Ray r, vec3 bmin, vec3 bmax, out float t) {
+  float bminx = bmin.x;
+  float bmaxx = bmax.x;
+  float bminy = bmin.y;
+  float bmaxy = bmax.y;
+
+  if (r.dir.x < 0.0) {
+    bminx = bmax.x;
+    bmaxx = bmin.x;
+  }
+
+  if (r.dir.y < 0.0) {
+    bminy = bmax.y;
+    bmaxy = bmin.y;
+  }
+
+  float x_min = (bminx - r.origin.x) / r.dir.x;
+  float x_max = (bmaxx - r.origin.x) / r.dir.x;
+
+  float y_min = (bminy - r.origin.y) / r.dir.y;
+  float y_max = (bmaxy - r.origin.y) / r.dir.y;
+
+  if (x_min > y_max || y_min > x_max) return false;
+
+  float t_min = max(x_min, y_min);
+  float t_max = min(x_max, y_max);
+
+  float bminz = bmin.z;
+  float bmaxz = bmax.z;
+
+  if (r.dir.y < 0.0) {
+    bminz = bmax.z;
+    bmaxz = bmin.z;
+  }
+
+  float z_min = (bminz - r.origin.z) / r.dir.z;
+  float z_max = (bmaxz - r.origin.z) / r.dir.z;
+
+  if (t_min > z_max || z_min > t_max) return false;
+
+  if (z_min > t_min) t_min = z_min;
+  if (z_max < t_max) t_max = z_max;
+
+  return true;
+}
+
 // get a random point on an unit sphere
 // reference: http://corysimon.github.io/articles/uniformdistn-on-sphere/
 vec3 sample_sphere_uniform(inout float seed, vec2 pixel) {
@@ -277,17 +326,18 @@ bool hit_mesh(Ray r, float at_min, float at_max, inout float at, out int index, 
       stats.rayTest += 1.0;
     } else {
       for (int j = 0; j < mesh.face_count; ++j) {
+        if (hit_bbox(r, mesh.bbox_min, mesh.bbox_max, t)) {
+          vec3 a = vertices[j * 3 + offset];
+          vec3 b = vertices[j * 3 + offset + 1];
+          vec3 c = vertices[j * 3 + offset + 2];
 
-        vec3 a = vertices[j * 3 + offset ];
-        vec3 b = vertices[j * 3 + offset + 1];
-        vec3 c = vertices[j * 3 + offset + 2];
-
-        if (hit_triangle_at(r, a, b, c, t) && t >= at_min && t < at_max && t < at) {
-          stats.rayIntersection += 1.0;
-          hit = true; 
-          at = t;
-          index = i;
-          normal = normalize(cross(b - a, c - a));
+          if (hit_triangle_at(r, a, b, c, t) && t >= at_min && t < at_max && t < at) {
+            stats.rayIntersection += 1.0;
+            hit = true; 
+            at = t;
+            index = i;
+            normal = normalize(cross(b - a, c - a));
+          }
         }
       }
 
