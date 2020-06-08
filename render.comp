@@ -224,7 +224,14 @@ bool hit_bbox(Ray r, vec3 bmin, vec3 bmax, out float t) {
   t_min = max(t_min, tz_min);
   t_max = min(t_max, tz_max);
 
-  t = t_min;
+  // the intersection behind the origin is ignored
+  if (t_max < 0.0) {
+    return false;
+  } else if (t_min < 0.0) {
+    t = t_max;
+  } else {
+    t = t_min;
+  }
 
   return true;
 }
@@ -328,8 +335,8 @@ bool hit_mesh(Ray r, float at_min, float at_max, inout float at, out int index, 
       }
       stats.rayTest += 1.0;
     } else {
-      for (int j = 0; j < mesh.face_count; ++j) {
-        if (hit_bbox(r, mesh.bbox_min, mesh.bbox_max, t)) {
+      if (hit_bbox(r, mesh.bbox_min, mesh.bbox_max, t)) {
+        for (int j = 0; j < mesh.face_count; ++j) {
           vec3 a = vertices[j * 3 + offset];
           vec3 b = vertices[j * 3 + offset + 1];
           vec3 c = vertices[j * 3 + offset + 2];
