@@ -334,20 +334,18 @@ bool hit_mesh(Ray r, float at_min, float at_max, inout float at, out int index, 
         normal = normalize(hit_at(r, t) - a);
       }
       stats.rayTest += 1.0;
-    } else {
-      if (hit_bbox(r, mesh.bbox_min, mesh.bbox_max, t)) {
-        for (int j = 0; j < mesh.face_count; ++j) {
-          vec3 a = vertices[j * 3 + offset];
-          vec3 b = vertices[j * 3 + offset + 1];
-          vec3 c = vertices[j * 3 + offset + 2];
+    } else if (hit_bbox(r, mesh.bbox_min, mesh.bbox_max, t)) {
+      for (int j = 0; j < mesh.face_count; ++j) {
+        vec3 a = vertices[j * 3 + offset];
+        vec3 b = vertices[j * 3 + offset + 1];
+        vec3 c = vertices[j * 3 + offset + 2];
 
-          if (hit_triangle_at(r, a, b, c, t) && t >= at_min && t < at_max && t < at) {
-            stats.rayIntersection += 1.0;
-            hit = true; 
-            at = t;
-            index = i;
-            normal = normalize(cross(b - a, c - a));
-          }
+        if (hit_triangle_at(r, a, b, c, t) && t >= at_min && t < at_max && t < at) {
+          stats.rayIntersection += 1.0;
+          hit = true; 
+          at = t;
+          index = i;
+          normal = normalize(cross(b - a, c - a));
         }
       }
 
