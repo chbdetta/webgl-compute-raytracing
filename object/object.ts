@@ -128,7 +128,7 @@ export class Group extends RenderObject {
     return offset;
   }
 
-  getMeshes(buffer: Float32Array, offset: number) {
+  getMeshes(buffer: ArrayBuffer, offset: number) {
     for (let child of this.children) {
       offset = child.getMeshes(buffer, offset);
     }
