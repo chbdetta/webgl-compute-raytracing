@@ -13,11 +13,12 @@ function main() {
 
   try {
     renderer = new Renderer(canvas, WIDTH, HEIGHT);
-  } catch {
+  } catch (e) {
     const p = document.createElement("h1");
     p.innerHTML = `You need to use Google Chrome Browser (>= v80) and turn on these experimental features in <i>chrome://flags</i> <br> WebGL 2.0 Compute: Enabled <br> Choose ANGLE graphics backend: OpenGL`;
     canvas.remove();
     document.body.append(p);
+    console.log(e);
     return;
   }
 
