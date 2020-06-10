@@ -1,7 +1,7 @@
 import { mat4, vec3 } from "gl-matrix";
 import { Face, PointFactory, UVFactory } from "../point";
 import Material from "../material";
-import RenderObject, { RenderCallback } from "./render";
+import RenderObject, { RenderCallback, RenderObjectBuffers } from "./render";
 import Primitive from "./primitive";
 
 export { RenderCallback };
@@ -107,32 +107,24 @@ export class Group extends RenderObject {
   }
 
   freeze(material: Material) {
-    let n = 0;
-    let m = 0;
+    const ret = [0, 0, 0];
 
     super.freeze(material);
 
     this.children.forEach((child) => {
       const counts = child.freeze(this.material);
-      n += counts[0];
-      m += counts[1];
+      ret[0] += counts[0];
+      ret[1] += counts[1];
+      ret[2] += counts[2];
     });
 
-    return [n, m] as [number, number];
+    return ret as [number, number, number];
   }
 
-  getVertices(buffer: Float32Array, offset: number) {
+  createData(buffers: RenderObjectBuffers) {
     for (let child of this.children) {
-      offset = child.getVertices(buffer, offset);
+      child.createData(buffers);
     }
-    return offset;
-  }
-
-  getMeshes(buffer: ArrayBuffer, offset: number) {
-    for (let child of this.children) {
-      offset = child.getMeshes(buffer, offset);
-    }
-    return offset;
   }
 }
 
@@ -232,7 +224,7 @@ const rounded = (fn: (x: number) => number) => (x: number) => {
 const cos = rounded(Math.cos);
 const sin = rounded(Math.sin);
 
-const meshBytes = 28;
+const meshBytes = 24;
 
 export class Cylinder extends Primitive {
   static count = 0;
@@ -321,73 +313,65 @@ export class Sphere extends RenderObject {
     // pass
   }
 
-  // no vertices
-  getVertices(buffer: Float32Array, offset: number) {
-    this.bufferOffset = offset / 4;
-    buffer[offset++] = this.origin[0];
-    buffer[offset++] = this.origin[1];
-    buffer[offset++] = this.origin[2];
-    offset++;
-    buffer[offset++] = this.normal[0];
-    buffer[offset++] = this.normal[1];
-    buffer[offset++] = this.normal[2];
-    offset++;
+  createData({ vertices: v, meshes: m }: RenderObjectBuffers) {
+    const verticesStart = v.offset;
 
-    return offset;
-  }
+    v.buffer[v.offset++] = this.origin[0];
+    v.buffer[v.offset++] = this.origin[1];
+    v.buffer[v.offset++] = this.origin[2];
+    v.offset++;
+    v.buffer[v.offset++] = this.normal[0];
+    v.buffer[v.offset++] = this.normal[1];
+    v.buffer[v.offset++] = this.normal[2];
+    v.offset++;
 
-  getMeshes(meshes: ArrayBuffer, offset: number) {
-    if (this.bufferOffset == null) {
-      throw new Error("buffer offset is not available");
-    }
-
-    const intArray = new Int32Array(meshes);
-    const floatArray = new Float32Array(meshes);
+    const intBuffer = new Int32Array(m.buffer);
+    const floatBuffer = new Float32Array(m.buffer);
 
     // padding required: https://twitter.com/9ballsyndrome/status/1178039885090848770
     // under std430 layout, a struct in an array use the largest alignment of its member.
     // we use face_count = -1 to denote a sphere
-    intArray[offset++] = -1;
-    // int offset;
-    intArray[offset++] = this.bufferOffset;
+    intBuffer[m.offset++] = -1;
+    // int m.offset;
+    intBuffer[m.offset++] = verticesStart / 4;
+    // No bounding box for a sphere
+    m.offset += 2;
     // emission intensity
-    floatArray[offset++] = this.material.emissionIntensity || 0;
+    floatBuffer[m.offset++] = this.material.emissionIntensity || 0;
     // alpha
-    floatArray[offset++] = this.material.specularExponent || 100;
+    floatBuffer[m.offset++] = this.material.specularExponent || 100;
+    // paddings
+    m.offset += 2;
+
     // vec3 emission; // 14 Bytes but 16 Bytes alignment
-    floatArray[offset++] = this.material.emission?.r || 0;
-    floatArray[offset++] = this.material.emission?.g || 0;
-    floatArray[offset++] = this.material.emission?.b || 0;
+    floatBuffer[m.offset++] = this.material.emission?.r || 0;
+    floatBuffer[m.offset++] = this.material.emission?.g || 0;
+    floatBuffer[m.offset++] = this.material.emission?.b || 0;
     // padding
-    offset++;
+    m.offset++;
     // vec3 color;
-    floatArray[offset++] = this.material.color?.r || 0;
-    floatArray[offset++] = this.material.color?.g || 0;
-    floatArray[offset++] = this.material.color?.b || 0;
+    floatBuffer[m.offset++] = this.material.color?.r || 0;
+    floatBuffer[m.offset++] = this.material.color?.g || 0;
+    floatBuffer[m.offset++] = this.material.color?.b || 0;
     // padding
-    offset++;
+    m.offset++;
     // vec3 specular
-    floatArray[offset++] = this.material.specular?.r || 0;
-    floatArray[offset++] = this.material.specular?.g || 0;
-    floatArray[offset++] = this.material.specular?.b || 0;
+    floatBuffer[m.offset++] = this.material.specular?.r || 0;
+    floatBuffer[m.offset++] = this.material.specular?.g || 0;
+    floatBuffer[m.offset++] = this.material.specular?.b || 0;
     // padding
-    offset++;
+    m.offset++;
     // vec3 refraction;
-    floatArray[offset++] = this.material.refraction?.r || 0;
-    floatArray[offset++] = this.material.refraction?.g || 0;
-    floatArray[offset++] = this.material.refraction?.b || 0;
+    floatBuffer[m.offset++] = this.material.refraction?.r || 0;
+    floatBuffer[m.offset++] = this.material.refraction?.g || 0;
+    floatBuffer[m.offset++] = this.material.refraction?.b || 0;
     // padding
-    offset++;
-
-    // no bounding box
-    offset += 8;
-
-    return offset;
+    m.offset++;
   }
 
   freeze(material: Material) {
     super.freeze(material);
-    return [8, meshBytes] as [number, number];
+    return [8, meshBytes, 0] as [number, number, number];
   }
 
   commit() {

@@ -15,8 +15,11 @@ import Timer from "./timer";
 export default class World {
   name: string;
   objects: Map<string, RenderObject> = new Map();
+
   vertices: Float32Array;
   meshes: ArrayBuffer;
+  slabs: Float32Array;
+
   ambient: Color;
 
   baseMaterial: Material;
@@ -44,28 +47,35 @@ export default class World {
   }
 
   freeze() {
-    let n = 0;
-    let m = 0;
-
+    const c = [0, 0, 0];
     for (let [, o] of this.objects) {
       const counts = o.freeze(this.baseMaterial);
-      n += counts[0];
-      m += counts[1];
+      c[0] += counts[0];
+      c[1] += counts[1];
+      c[2] += counts[2];
     }
 
-    this.vertices = new Float32Array(n);
-    this.meshes = new ArrayBuffer(m * 4);
+    this.vertices = new Float32Array(c[0]);
+    this.meshes = new ArrayBuffer(c[1] * 4);
+    this.slabs = new Float32Array(c[2]);
 
-    let offset = 0;
+    const buffers = {
+      vertices: {
+        buffer: this.vertices,
+        offset: 0,
+      },
+      meshes: {
+        buffer: this.meshes,
+        offset: 0,
+      },
+      slabs: {
+        buffer: this.slabs,
+        offset: 0,
+      },
+    };
 
-    for (let [, o] of this.objects) {
-      offset = o.getVertices(this.vertices, offset);
-    }
-
-    offset = 0;
-
-    for (let [, o] of this.objects) {
-      offset = o.getMeshes(this.meshes, offset);
+    for (const [, o] of this.objects) {
+      o.createData(buffers);
     }
   }
 

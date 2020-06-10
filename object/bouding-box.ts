@@ -2,26 +2,23 @@ import { vec3, mat4 } from "gl-matrix";
 import BaseObject from "./base";
 import Primitive from "./primitive";
 
-export class BoundingBox extends BaseObject {
-  max: vec3;
-  min: vec3;
+export class Slab extends BaseObject {
+  far: number;
+  near: number;
+  normal: vec3;
 
-  constructor(object: Primitive) {
-    super(`bounding-box-${object.name}`);
+  constructor(object: Primitive, normal: vec3) {
+    super(`Slab-${object.name}`);
     this.modelMatrix = object.modelMatrix;
 
-    this.max = [-Infinity, -Infinity, -Infinity];
-    this.min = [Infinity, Infinity, Infinity];
+    this.far = -Infinity;
+    this.near = Infinity;
+    this.normal = normal;
 
     for (const p of object.rawPoints) {
-      for (let i = 0; i < 3; i++) {
-        if (p.location[i] > this.max[i]) {
-          this.max[i] = p.location[i];
-        }
-        if (p.location[i] < this.min[i]) {
-          this.min[i] = p.location[i];
-        }
-      }
+      const d = vec3.dot(p.location, normal);
+      this.near = Math.min(this.near, d);
+      this.far = Math.max(this.far, d);
     }
   }
 }

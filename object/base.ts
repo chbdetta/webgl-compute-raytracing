@@ -5,7 +5,6 @@ const toRad = (angle: number) => (angle / 180) * Math.PI;
 export default abstract class BaseObject {
   name: string;
   modelMatrix = mat4.create();
-  bufferOffset?: number;
 
   animateMatrix: (time: number, object: BaseObject) => void;
 

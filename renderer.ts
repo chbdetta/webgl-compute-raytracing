@@ -31,10 +31,12 @@ export default class Renderer {
   buffers: {
     vertices: Buffer | null;
     meshes: Buffer | null;
+    slabs: Buffer | null;
     stats: Buffer | null;
   } = {
     vertices: null,
     meshes: null,
+    slabs: null,
     stats: null,
   };
 
@@ -206,10 +208,11 @@ export default class Renderer {
   sendBuffer() {
     if (!this.#world) return;
 
-    const buffers: ["vertices", "meshes", "stats"] = [
+    const buffers: ["stats", "vertices", "meshes", "slabs"] = [
+      "stats",
       "vertices",
       "meshes",
-      "stats",
+      "slabs",
     ];
 
     // create and bind buffers

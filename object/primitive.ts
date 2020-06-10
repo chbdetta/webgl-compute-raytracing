@@ -1,10 +1,10 @@
-import { mat4 } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 import { Face, PointFactory } from "../point";
-import RenderObject, { RenderCallback } from "./render";
+import RenderObject, { RenderCallback, RenderObjectBuffers } from "./render";
 import Material from "../material";
-import { BoundingBox } from "./bouding-box";
+import { Slab } from "./bouding-box";
 
-const meshBytes = 28;
+const meshBytes = 24;
 
 /**
  * We make some assumptions to improve the performance
@@ -18,14 +18,14 @@ export default class Primitive extends RenderObject {
   // The id of a texture
   faces: Readonly<Face[]>;
   rawPoints: PointFactory;
-  bbox: BoundingBox | null;
+  bbox: Slab[];
 
   constructor(name: string, faces: Readonly<Face[]>, pf: PointFactory) {
     super(name);
 
     this.faces = faces;
     this.rawPoints = pf;
-    this.bbox = null;
+    this.bbox = [];
   }
 
   invertNormal() {
@@ -94,14 +94,32 @@ export default class Primitive extends RenderObject {
     return this;
   }
 
+  createBoundingBox() {
+    const v = Math.sqrt(3) / 3;
+
+    const normals: vec3[] = [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+      [v, v, v],
+      [-v, v, v],
+      [-v, -v, v],
+      [v, -v, v],
+    ];
+    // generate the bounding box
+    this.bbox = normals.map((n) => new Slab(this, n));
+  }
+
   freeze(material: Material) {
     if (!this.faces || !this.rawPoints) {
       console.warn("Modifying the object after freezing");
-      return [0, 1] as [number, number];
+      return [-1, -1, -1] as [number, number, number];
     }
 
-    // generate the bounding box
-    this.bbox = new BoundingBox(this);
+    // convert to world space
+    this.commit();
+
+    this.createBoundingBox();
 
     const size = 4;
     const data = (this.data = new Float32Array(
@@ -128,76 +146,74 @@ export default class Primitive extends RenderObject {
     }
 
     // 48 is the size after alignment
-    return [data.length, meshBytes] as [number, number];
+    return [data.length, meshBytes, this.bbox.length * 8] as [
+      number,
+      number,
+      number
+    ];
   }
 
-  getVertices(vertices: Float32Array, offset: number) {
-    // copy vertices data to the buffer
-    // TODO: do a centralized buffer creation
-    this.bufferOffset = offset / 4;
-    for (let i = 0; i < this.data.length; i++) {
-      vertices[offset++] = this.data[i];
-    }
-    return offset;
-  }
-
-  getMeshes(meshes: ArrayBuffer, offset: number) {
-    if (this.bufferOffset == null) {
-      throw new Error("buffer offset is not available");
-    }
-
-    const intArray = new Int32Array(meshes);
-    const floatArray = new Float32Array(meshes);
+  createData({ vertices: v, meshes: m, slabs: s }: RenderObjectBuffers) {
+    // mesh buffer
+    const intBuffer = new Int32Array(m.buffer);
+    const floatBuffer = new Float32Array(m.buffer);
 
     // padding required: https://twitter.com/9ballsyndrome/status/1178039885090848770
     // under std430 layout, a struct in an array use the largest alignment of its member.
     // int face_count;
-    intArray[offset++] = this.faces.length;
+    intBuffer[m.offset++] = this.faces.length;
     // int offset;
-    intArray[offset++] = this.bufferOffset;
+    intBuffer[m.offset++] = v.offset / 4;
+    // int slab_count
+    intBuffer[m.offset++] = this.bbox.length;
+    // int slab_offset;
+    intBuffer[m.offset++] = s.offset / 8;
     // emission intensity
-    floatArray[offset++] = this.material.emissionIntensity || 0;
+    floatBuffer[m.offset++] = this.material.emissionIntensity || 0;
     // alpha
-    floatArray[offset++] = this.material.specularExponent || 100;
+    floatBuffer[m.offset++] = this.material.specularExponent || 100;
+    // paddings
+    m.offset += 2;
 
     // vec3 emission; // 14 Bytes but 16 Bytes alignment
-    floatArray[offset++] = this.material.emission?.r || 0;
-    floatArray[offset++] = this.material.emission?.g || 0;
-    floatArray[offset++] = this.material.emission?.b || 0;
+    floatBuffer[m.offset++] = this.material.emission?.r || 0;
+    floatBuffer[m.offset++] = this.material.emission?.g || 0;
+    floatBuffer[m.offset++] = this.material.emission?.b || 0;
     // padding
-    offset++;
+    m.offset++;
     // vec3 color;
-    floatArray[offset++] = this.material.color?.r || 0;
-    floatArray[offset++] = this.material.color?.g || 0;
-    floatArray[offset++] = this.material.color?.b || 0;
+    floatBuffer[m.offset++] = this.material.color?.r || 0;
+    floatBuffer[m.offset++] = this.material.color?.g || 0;
+    floatBuffer[m.offset++] = this.material.color?.b || 0;
     // padding
-    offset++;
+    m.offset++;
     // vec3 specular
-    floatArray[offset++] = this.material.specular?.r || 0;
-    floatArray[offset++] = this.material.specular?.g || 0;
-    floatArray[offset++] = this.material.specular?.b || 0;
+    floatBuffer[m.offset++] = this.material.specular?.r || 0;
+    floatBuffer[m.offset++] = this.material.specular?.g || 0;
+    floatBuffer[m.offset++] = this.material.specular?.b || 0;
     // padding
-    offset++;
+    m.offset++;
     // vec3 refraction;
-    floatArray[offset++] = this.material.refraction?.r || 0;
-    floatArray[offset++] = this.material.refraction?.g || 0;
-    floatArray[offset++] = this.material.refraction?.b || 0;
+    floatBuffer[m.offset++] = this.material.refraction?.r || 0;
+    floatBuffer[m.offset++] = this.material.refraction?.g || 0;
+    floatBuffer[m.offset++] = this.material.refraction?.b || 0;
     // padding
-    offset++;
-    // bounding box
-    floatArray[offset++] = this.bbox!.min[0];
-    floatArray[offset++] = this.bbox!.min[1];
-    floatArray[offset++] = this.bbox!.min[2];
-    // padding
-    offset++;
-    // bounding box
-    floatArray[offset++] = this.bbox!.max[0];
-    floatArray[offset++] = this.bbox!.max[1];
-    floatArray[offset++] = this.bbox!.max[2];
-    // padding
-    offset++;
+    m.offset++;
 
-    return offset;
+    // copy vertices data to the buffer
+    for (let i = 0; i < this.data.length; i++) {
+      v.buffer[v.offset++] = this.data[i];
+    }
+
+    // bounding box buffer
+    for (const slab of this.bbox) {
+      s.buffer[s.offset++] = slab.normal[0];
+      s.buffer[s.offset++] = slab.normal[1];
+      s.buffer[s.offset++] = slab.normal[2];
+      s.buffer[s.offset++] = slab.near;
+      s.buffer[s.offset++] = slab.far;
+      s.offset += 3;
+    }
   }
 
   render(cb: RenderCallback, material: Material, time: number): void;

@@ -17,42 +17,13 @@ layout (rgba8, binding = 0) writeonly uniform highp image2D frameTex;
 layout (rgba8, binding = 1) readonly uniform highp image2D accumulatedTex;
 
 #define EPSILON 0.001
-#define MAX_FLOAT 3.402823466e+30F
+#define MAX_FLOAT 3.402823466e+38
 #define M_PI 3.14159265358979323846
 #define M_TWO_PI 6.28318530718
 
 const vec3 zero3 = vec3(0.0);
 const vec3 one3 = vec3(1.0);
 const vec3 oneThird3 = vec3(1.0/3.0);
-
-// describe a mesh object
-struct Mesh {
-  // number of faces
-  // face_count == -1: a sphere
-  int face_count;
-  // the starting index in the vertice array
-  int offset;
-  // emit itensity
-  float intensity;
-  // specular exponent
-  float alpha;
-  // emit light color
-  vec3 emission;
-  vec3 color;
-  vec3 specular;
-  vec3 refraction;
-  // bounding box
-  vec3 bbox_min;
-  vec3 bbox_max;
-};
-
-layout(std430, binding = 0) readonly buffer Vertices {
-  vec3 vertices[];
-};
-
-layout(std430, binding = 1) readonly buffer Meshes {
-  Mesh meshes[];
-};
 
 struct Stats {
   float diff;
@@ -62,13 +33,56 @@ struct Stats {
   float rayIntersection;
 };
 
-layout(std430, binding = 2) buffer Stats_SSBO {
+layout(std430, binding = 0) buffer Stats_SSBO {
   float diff[LOCALX * LOCALY];
   float mainRay[LOCALX * LOCALY];
   float rayCount[LOCALX * LOCALY];
   float rayTest[LOCALX * LOCALY];
   float rayIntersection[LOCALX * LOCALY];
 };
+
+// describe a mesh object
+struct Mesh {
+  // number of faces
+  // face_count == -1: a sphere
+  int face_count;
+  // the starting index in the vertice array
+  int offset;
+  // the number of 
+  int slab_count;
+  // the starting index in the bbox array
+  int slab_offset;
+  // emit itensity
+  float intensity;
+  // specular exponent
+  float alpha;
+  // emit light color
+  vec3 emission;
+  vec3 color;
+  vec3 specular;
+  vec3 refraction;
+};
+
+layout(std430, binding = 1) readonly buffer Vertices {
+  vec3 vertices[];
+};
+
+layout(std430, binding = 2) readonly buffer Meshes {
+  Mesh meshes[];
+};
+
+struct Slab {
+  vec3 n;
+  float near;
+  float far;
+  // paddings
+};
+
+layout(std430, binding = 3) readonly buffer BoudingBoxes {
+  // vec3 normal + float far + float near
+  Slab slabs[];
+};
+
 
 uniform float uSeed;
 uniform int uRenderTimes;
@@ -180,54 +194,41 @@ bool hit_sphere(Ray r, vec3 center, float radius, out float at) {
   }
 }
 
-bool hit_bbox(Ray r, vec3 bmin, vec3 bmax, out float t) {
-  float t_min;
-  float t_max;
-  vec3 invdir = one3 / r.dir;
+bool hit_bbox(Ray r, Mesh m, out float t, out vec3 normal) {
+  float t_min = -10000.0;
+  float t_max = MAX_FLOAT;
 
-  if (r.dir.x < 0.0) {
-    t_min = (bmax.x - r.origin.x) * invdir.x;
-    t_max = (bmin.x - r.origin.x) * invdir.x;
-  } else {
-    t_min = (bmin.x - r.origin.x) * invdir.x;
-    t_max = (bmax.x - r.origin.x) * invdir.x;
+  for (int i = 0; i < m.slab_count ; i++) {
+    Slab s = slabs[i + m.slab_offset];
+
+    float NdotO = dot(s.n, r.origin);
+    float NdotR = dot(s.n, r.dir);
+
+    float invNdotR = 1.0 / NdotR;
+
+    float t_near;
+    float t_far;
+
+    if (invNdotR >= 0.0) {
+      t_near = (s.near - NdotO) * invNdotR;
+      t_far = (s.far - NdotO) * invNdotR;
+    } else {
+      t_near = (s.far - NdotO) * invNdotR;
+      t_far = (s.near - NdotO) * invNdotR;
+    }
+
+    if (t_near > t_min) {
+      t_min = t_near;
+      normal = s.n;
+    }
+    if (t_far < t_max) {
+      t_max = t_far;
+    }
+
+    if (t_min > t_max || t_max < EPSILON) return false;
   }
 
-  float ty_min;
-  float ty_max;
-  if (r.dir.y < 0.0) {
-    ty_min = (bmax.y - r.origin.y) * invdir.y;
-    ty_max = (bmin.y - r.origin.y) * invdir.y;
-  } else {
-    ty_min = (bmin.y - r.origin.y) * invdir.y;
-    ty_max = (bmax.y - r.origin.y) * invdir.y;
-  }
-
-  if ((t_min > ty_max) || (ty_min > t_max)) return false;
-
-  t_min = max(t_min, ty_min);
-  t_max = min(t_max, ty_max);
-
-  float tz_min;
-  float tz_max;
-  if (r.dir.z < 0.0) {
-    tz_min = (bmax.z - r.origin.z) * invdir.z;
-    tz_max = (bmin.z - r.origin.z) * invdir.z;
-  } else {
-    tz_min = (bmin.z - r.origin.z) * invdir.z;
-    tz_max = (bmax.z - r.origin.z) * invdir.z;
-  }
-
-
-  if (t_min > tz_max || tz_min > t_max) return false;
-
-  t_min = max(t_min, tz_min);
-  t_max = min(t_max, tz_max);
-
-  // the intersection behind the origin is ignored
-  if (t_max < 0.0) {
-    return false;
-  } else if (t_min < 0.0) {
+  if (t_min < EPSILON) {
     t = t_max;
   } else {
     t = t_min;
@@ -321,6 +322,7 @@ bool hit_mesh(Ray r, float at_min, float at_max, inout float at, out int index, 
     Mesh mesh = meshes[i];
     int offset = mesh.offset;
     float t;
+    vec3 n;
 
     if (mesh.face_count == -1) {
       vec3 a = vertices[offset];
@@ -334,7 +336,17 @@ bool hit_mesh(Ray r, float at_min, float at_max, inout float at, out int index, 
         normal = normalize(hit_at(r, t) - a);
       }
       stats.rayTest += 1.0;
-    } else if (hit_bbox(r, mesh.bbox_min, mesh.bbox_max, t)) {
+    } else if (hit_bbox(r, mesh, t, n) && t >= at_min && t < at_max && t < at) {
+      // hit = true; 
+      // at = t;
+      // index = i;
+      // normal = normalize(n);
+      // if (dot(normal, r.dir) > 0.0) {
+      //   normal = -normal;
+      // }
+
+      stats.rayIntersection += 1.0;
+
       for (int j = 0; j < mesh.face_count; ++j) {
         vec3 a = vertices[j * 3 + offset];
         vec3 b = vertices[j * 3 + offset + 1];
@@ -426,13 +438,13 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
 
         if (chance < specular_factor) {
           // reflective
-          r.origin = hit_point + 0.01 * surface_normal;
+          r.origin = hit_point + EPSILON * surface_normal;
           r.dir = sample_hemisphere_uniform(reflect_dir(surface_normal, r.dir), mesh.alpha, seed, pixel);
           float f = (mesh.alpha + 2.0) / (mesh.alpha + 1.0);
           r.energy *= (1.0 / specular_factor) * mesh.specular * max(0.0, dot(surface_normal, r.dir) * f);
         } else if (chance < specular_factor + diffuse_factor) {
           // diffuse
-          r.origin = hit_point + 0.01 * surface_normal;
+          r.origin = hit_point + EPSILON * surface_normal;
           r.dir = sample_hemisphere_uniform(surface_normal, 1.0, seed, pixel);
           r.energy *= (1.0 / diffuse_factor) * mesh.color;
         } else {
@@ -450,7 +462,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
           }
 
           // refraction
-          r.origin = hit_point - 0.01 * surface_normal;
+          r.origin = hit_point - EPSILON * surface_normal;
           r.dir = refract_dir(surface_normal, r.dir, k);
           r.energy *= (1.0 / refraction_factor) * mesh.refraction;
         }

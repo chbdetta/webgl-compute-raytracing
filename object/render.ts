@@ -9,6 +9,17 @@ export type RenderCallback = (
   model: mat4
 ) => void;
 
+export type RenderObjectBuffers = {
+  meshes: RenderObjectBuffer<ArrayBuffer>;
+  vertices: RenderObjectBuffer<Float32Array>;
+  slabs: RenderObjectBuffer<Float32Array>;
+};
+
+export type RenderObjectBuffer<T> = {
+  buffer: T;
+  offset: number;
+};
+
 export default abstract class RenderObject extends BaseObject {
   parent: RenderObject;
   material: Material;
@@ -58,8 +69,10 @@ export default abstract class RenderObject extends BaseObject {
     return this;
   }
 
-  abstract getVertices(buffer: Float32Array, offset: number): number;
-  abstract getMeshes(buffer: ArrayBuffer, offset: number): number;
+  /**
+   * Create data describing the render object.
+   */
+  abstract createData(buffers: RenderObjectBuffers): void;
 
   abstract render(
     cb: RenderCallback,
@@ -89,7 +102,7 @@ export default abstract class RenderObject extends BaseObject {
     }
 
     this.material = material;
-    return [-1, -1] as [number, number];
+    return [-1, -1, -1] as [number, number, number];
   }
 
   child(name: string): RenderObject {
