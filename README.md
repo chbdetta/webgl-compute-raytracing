@@ -1,11 +1,4 @@
-# WebGL 2.0 Compute Ray-tracing
-
-## Build & Develop
-
-- `npm run build`
-- `npm run dev`
-
-## [Demo](https://people.ucsc.edu/~hchen222/cse160-hw5/)
+# WebGL 2.0 Compute Ray-tracing - [Demo](https://people.ucsc.edu/~hchen222/cse160-hw5/)
 
 ![demo](example/demo.gif)
 
@@ -15,6 +8,11 @@
 1. WebGL 2.0 compute shader is supported as an experimental feature on Windows / Linux.
 1. Using chrome: turn on `WebGl 2.0 Compute` and `Choose ANGLE render backend: OpenGL` in Chrome experimental features. Access experimental features in chrome://flags
 1. Having a good graphic card can give smoother FPS
+
+## Build & Develop
+
+- `npm run build`
+- `npm run dev`
 
 ## Reference
 
