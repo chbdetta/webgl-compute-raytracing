@@ -9,11 +9,10 @@
 
 ### Prerequisite
 
-Check browser support: [Can I use](https://caniuse.com/#feat=mdn-api_webgl2computerenderingcontext)
-
-Using chrome: turn on `WebGl 2.0 Compute` and `Choose ANGLE render backend: OpenGL` in Chrome experimental features.
-
-A good graphic card :)
+1. Check browser support: [Can I use](https://caniuse.com/#feat=mdn-api_webgl2computerenderingcontext)
+1. WebGL 2.0 compute shader is supported as an experimental feature on Windows / Linux.
+1. Using chrome: turn on `WebGl 2.0 Compute` and `Choose ANGLE render backend: OpenGL` in Chrome experimental features. Access experimental features in chrome://flags
+1. Having a good graphic card can give smoother FPS
 
 ## Reference
 
