@@ -7,6 +7,8 @@
 
 ## [Demo](https://people.ucsc.edu/~hchen222/cse160-hw5/)
 
+![demo](example/demo.gif)
+
 ### Prerequisite
 
 1. Check browser support: [Can I use](https://caniuse.com/#feat=mdn-api_webgl2computerenderingcontext)
