@@ -42,6 +42,21 @@ export default class World {
     this.timer = timer;
     this.ambient = Color.BLACK;
 
+    const cameraCacheId = `${name}-camera`;
+
+    // read from persistent cache
+    const cache = localStorage.getItem(cameraCacheId);
+    const cameraData = cache && JSON.parse(cache);
+
+    if (cache) {
+      this.camera.parse(cameraData);
+    }
+
+    // save to cache
+    this.camera.addListener(Camera.CHANGE, (data) => {
+      localStorage.setItem(cameraCacheId, JSON.stringify(data));
+    });
+
     initializer.call(this, this);
     this.freeze();
   }
@@ -435,7 +450,7 @@ export default class World {
 export const worlds = {
   test: new World(
     "test",
-    new Camera(12 / 8, [0, 0, -10], [0, 0, 0]),
+    new Camera({ ratio: 12 / 8, eye: [0, 0, -10], at: [0, 0, 0] }),
     function () {
       this.ambient = new Color(0, 0.05, 0.15);
 
@@ -552,6 +567,13 @@ export const worlds = {
           .setSpecularExponent(Material.MIRROR)
           .commit()
       );
+    }
+  ),
+  cube: new World(
+    "world",
+    new Camera({ ratio: 12 / 8, eye: [0, 0, -10], at: [0, 0, 0] }),
+    function (w) {
+      w.addObject(new Cube().setEmission(Color.WHITE).setEmissionIntensity(1));
     }
   ),
   // at: new World("AT-AT", new Camera(1, [-10, 1, -10], [0, 5, -2]), function () {

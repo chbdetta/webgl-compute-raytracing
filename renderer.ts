@@ -2,8 +2,9 @@
 
 import computeShader from "./render.comp";
 import blitShader from "./blit.comp";
-import World from "world";
+import World from "./world";
 import Stats from "./stats";
+import Camera from "./camera";
 
 // 2D local invocation
 const LOCAL_X = 16;
@@ -54,10 +55,10 @@ export default class Renderer {
   set world(world: World | null) {
     this.#world = world;
     if (this.#world) {
-      this.#world.camera.onChange = (camera) => {
+      this.#world.camera.addListener(Camera.CHANGE, () => {
         this.renderTimes = 0;
         this.completed = false;
-      };
+      });
 
       this.#world.camera.update();
 

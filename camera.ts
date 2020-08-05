@@ -1,6 +1,22 @@
 import { vec3, mat4 } from "gl-matrix";
+import EventEmitter from "eventemitter3";
 
-export default class Camera {
+enum Event {
+  CHANGE = "change",
+}
+
+type CameraJSON = {
+  ratio: number;
+  eye: vec3;
+  at: vec3;
+  up: vec3;
+  fov: number;
+};
+
+export default class Camera extends EventEmitter {
+  // events
+  static CHANGE = Event.CHANGE;
+
   eye: vec3;
   at: vec3;
   up: vec3;
@@ -30,18 +46,26 @@ export default class Camera {
     return vec3.cross(dir, dir, vec3.normalize(vec3.create(), this.up));
   }
 
-  constructor(
-    ratio: number,
-    eye?: vec3,
-    at?: vec3,
-    up?: vec3,
-    fov: number = Math.PI / 4
-  ) {
+  constructor({
+    ratio,
+    eye,
+    at,
+    up,
+    fov,
+  }: {
+    ratio: number;
+    eye?: vec3;
+    at?: vec3;
+    up?: vec3;
+    fov?: number;
+  }) {
+    super();
+
     this.eye = eye || vec3.clone([0, 0, -3]);
     this.at = at || vec3.clone([0, 0, 0]);
     this.up = up || vec3.clone([0, 1, 0]);
     this.ratio = ratio;
-    this.fov = fov;
+    this.fov = fov ?? Math.PI / 4;
     this.#NDCToScreen = mat4.create();
     this.#panMatrix = mat4.create();
 
@@ -53,8 +77,6 @@ export default class Camera {
     this.invertPerspective = mat4.create();
     this.update();
   }
-
-  onChange?: (self: this) => void;
 
   update() {
     mat4.lookAt(this.invertView, this.eye, this.at, this.up);
@@ -69,7 +91,27 @@ export default class Camera {
       this.#NDCToScreen
     );
 
-    this.onChange?.(this);
+    this.emit(Camera.CHANGE, this.json(), this);
+  }
+
+  json(): CameraJSON {
+    return {
+      ratio: this.ratio,
+      eye: this.eye,
+      at: this.at,
+      up: this.up,
+      fov: this.fov,
+    };
+  }
+
+  parse(data: CameraJSON) {
+    this.ratio = data.ratio;
+    this.eye = data.eye;
+    this.at = data.at;
+    this.up = data.up;
+    this.fov = data.fov;
+
+    this.update();
   }
 
   setRatio(ratio: number) {
