@@ -52,12 +52,9 @@ struct Mesh {
   int slab_count;
   // the starting index in the bbox array
   int slab_offset;
-  // emit itensity
-  float intensity;
   // specular exponent
   float alpha;
   // emit light color
-  vec3 emission;
   vec3 color;
   vec3 specular;
   vec3 refraction;
@@ -396,22 +393,26 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
       vec3 hit_point = hit_at(r, at);
       // the ray direction and normal are at the same side
       bool same_side = dot(surface_normal, r.dir) < 0.0;
+      // TODO: compute direct lighting
 
-      // the ray hit a light source.
-      if (mesh.emission != zero3) {
-      // a light source only emit light on the normal direction
-        if (same_side) {
-        ret += r.energy * mesh.emission * mesh.intensity;
-        } else {
-          ret += zero3;
-        }
+      // compute indirect lighting
 
-        // r.energy = zero3;
+      // the ray hit a light source, ignore it because it is calculated in the direct lighting
 
-        if (depth == 1) {
-          depth -= 1;
-        }
-      }
+      // if (mesh.emission != zero3) {
+      // // a light source only emit light on the normal direction
+      //   if (same_side) {
+      //   ret += r.energy * mesh.emission * mesh.intensity;
+      //   } else {
+      //     ret += zero3;
+      //   }
+
+      //   // r.energy = zero3;
+
+      //   if (depth == 1) {
+      //     depth -= 1;
+      //   }
+      // }
 
       float diffuse_factor = dot(mesh.color, oneThird3);
       float specular_factor = dot(mesh.specular, oneThird3);

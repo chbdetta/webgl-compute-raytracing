@@ -29,16 +29,6 @@ export default abstract class RenderObject extends BaseObject {
     this.material = new Material();
   }
 
-  setEmission(color: Color) {
-    this.material.setEmission(color);
-    return this;
-  }
-
-  setEmissionIntensity(n: number) {
-    this.material.setEmissionIntensity(n);
-    return this;
-  }
-
   setColor(color: Color) {
     this.material.setColor(color);
     return this;

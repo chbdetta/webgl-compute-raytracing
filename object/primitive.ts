@@ -168,19 +168,11 @@ export default class Primitive extends RenderObject {
     intBuffer[m.offset++] = this.bbox.length;
     // int slab_offset;
     intBuffer[m.offset++] = s.offset / 8;
-    // emission intensity
-    floatBuffer[m.offset++] = this.material.emissionIntensity || 0;
     // alpha
     floatBuffer[m.offset++] = this.material.specularExponent || 100;
     // paddings
-    m.offset += 2;
+    m.offset += 3;
 
-    // vec3 emission; // 14 Bytes but 16 Bytes alignment
-    floatBuffer[m.offset++] = this.material.emission?.r || 0;
-    floatBuffer[m.offset++] = this.material.emission?.g || 0;
-    floatBuffer[m.offset++] = this.material.emission?.b || 0;
-    // padding
-    m.offset++;
     // vec3 color;
     floatBuffer[m.offset++] = this.material.color?.r || 0;
     floatBuffer[m.offset++] = this.material.color?.g || 0;

@@ -1,8 +1,6 @@
 import Color from "./color";
 
 export default class Material {
-  emission?: Color;
-  emissionIntensity?: number;
   texture?: number;
   specularExponent?: number;
   color?: Color;
@@ -23,17 +21,6 @@ export default class Material {
   setColor(color: Color) {
     this.color = color;
     return this;
-  }
-
-  setEmission(color: Color) {
-    this.emission = color;
-    if (this.emissionIntensity == null) {
-      this.setEmissionIntensity(100);
-    }
-  }
-
-  setEmissionIntensity(n: number) {
-    this.emissionIntensity = n;
   }
 
   setTexture(textureId: number) {
