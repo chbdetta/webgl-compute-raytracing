@@ -98,11 +98,20 @@ function main() {
     .getElementById("world-selector")
     ?.addEventListener("change", function () {
       const worldIndex = ~~(this as HTMLSelectElement).value;
-      console.log(worldIndex);
       renderer.world = worlds[worldIndex];
+
+      localStorage.setItem("world", renderer.world.name);
     });
 
-  worldSelector.value = "0";
+  if (localStorage.getItem("world")) {
+    const index = worlds.findIndex(
+      ({ name }) => name === localStorage.getItem("world")
+    );
+    worldSelector.value = String(index);
+  } else {
+    worldSelector.value = "0";
+  }
+
   worldSelector.dispatchEvent(new InputEvent("change"));
 
   tick();
