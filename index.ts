@@ -22,7 +22,7 @@ function main() {
     return;
   }
 
-  renderer.world = worlds.test;
+  renderer.world = worlds[0];
   renderer.world.camera.setRatio(WIDTH / HEIGHT);
 
   const tick = () => {

@@ -1,6 +1,7 @@
 import { vec3, mat4 } from "gl-matrix";
 import BaseObject from "./base";
 import Primitive from "./primitive";
+import { BuffersLength, Buffers } from "../buffer";
 
 export class Slab extends BaseObject {
   far: number;
@@ -20,5 +21,15 @@ export class Slab extends BaseObject {
       this.near = Math.min(this.near, d);
       this.far = Math.max(this.far, d);
     }
+  }
+
+  bufferAppend(buffers: Buffers) {
+    buffers.slab.append(this);
+  }
+
+  bufferCount(): BuffersLength {
+    return {
+      slab: 8,
+    };
   }
 }

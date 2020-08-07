@@ -1,8 +1,12 @@
 import { mat4 } from "gl-matrix";
+import { ToBuffer, BuffersLength, Buffers } from "../buffer";
 
 const toRad = (angle: number) => (angle / 180) * Math.PI;
 
-export default abstract class BaseObject {
+/**
+ * A BaseObject has only the basic location information
+ */
+export default abstract class BaseObject implements ToBuffer {
   name: string;
   modelMatrix = mat4.create();
 
@@ -64,4 +68,7 @@ export default abstract class BaseObject {
 
     return this;
   }
+
+  abstract bufferAppend(buffers: Buffers): void;
+  abstract bufferCount(): BuffersLength;
 }

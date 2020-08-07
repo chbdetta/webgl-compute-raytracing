@@ -1,8 +1,9 @@
 import { mat4, vec3 } from "gl-matrix";
 import { Face, PointFactory, UVFactory } from "../point";
 import Material from "../material";
-import RenderObject, { RenderCallback, RenderObjectBuffers } from "./render";
+import RenderObject, { RenderCallback } from "./render";
 import Primitive from "./primitive";
+import { BuffersLength, Buffers } from "../buffer";
 
 export { RenderCallback };
 
@@ -95,6 +96,10 @@ export class Group extends RenderObject {
     return s;
   }
 
+  freeze() {
+    // do nothing for a group
+  }
+
   commit() {
     mat4.transpose(this.modelMatrix, this.modelMatrix);
     this.children.forEach((child) => {
@@ -106,24 +111,34 @@ export class Group extends RenderObject {
     return this;
   }
 
-  freeze(material: Material) {
-    const ret = [0, 0, 0];
-
-    super.freeze(material);
+  mergeMaterial(material: Material) {
+    super.mergeMaterial(material);
 
     this.children.forEach((child) => {
-      const counts = child.freeze(this.material);
-      ret[0] += counts[0];
-      ret[1] += counts[1];
-      ret[2] += counts[2];
+      child.mergeMaterial(material);
     });
-
-    return ret as [number, number, number];
   }
 
-  createData(buffers: RenderObjectBuffers) {
+  bufferCount() {
+    const ret: BuffersLength = {
+      vertex: 0,
+      mesh: 0,
+      slab: 0,
+    };
+
+    this.children.forEach((child) => {
+      const counts = child.bufferCount();
+      ret.vertex! += counts.vertex ?? 0;
+      ret.mesh! += counts.mesh ?? 0;
+      ret.slab! += counts.slab ?? 0;
+    });
+
+    return ret;
+  }
+
+  bufferAppend(buffers: Buffers) {
     for (let child of this.children) {
-      child.createData(buffers);
+      child.bufferAppend(buffers);
     }
   }
 }
@@ -313,57 +328,29 @@ export class Sphere extends RenderObject {
     // pass
   }
 
-  createData({ vertices: v, meshes: m }: RenderObjectBuffers) {
-    const verticesStart = v.offset;
-
-    v.buffer[v.offset++] = this.origin[0];
-    v.buffer[v.offset++] = this.origin[1];
-    v.buffer[v.offset++] = this.origin[2];
-    v.offset++;
-    v.buffer[v.offset++] = this.normal[0];
-    v.buffer[v.offset++] = this.normal[1];
-    v.buffer[v.offset++] = this.normal[2];
-    v.offset++;
-
-    const intBuffer = new Int32Array(m.buffer);
-    const floatBuffer = new Float32Array(m.buffer);
-
-    // padding required: https://twitter.com/9ballsyndrome/status/1178039885090848770
-    // under std430 layout, a struct in an array use the largest alignment of its member.
-    // we use face_count = -1 to denote a parameterized shape
-    intBuffer[m.offset++] = -1;
-    // int m.offset;
-    intBuffer[m.offset++] = verticesStart / 4;
-    // No bounding box for a sphere
-    m.offset += 2;
-    // alpha
-    floatBuffer[m.offset++] = this.material.specularExponent || 100;
-    // paddings
-    m.offset += 3;
-
-    // vec3 color;
-    floatBuffer[m.offset++] = this.material.color?.r || 0;
-    floatBuffer[m.offset++] = this.material.color?.g || 0;
-    floatBuffer[m.offset++] = this.material.color?.b || 0;
-    // padding
-    m.offset++;
-    // vec3 specular
-    floatBuffer[m.offset++] = this.material.specular?.r || 0;
-    floatBuffer[m.offset++] = this.material.specular?.g || 0;
-    floatBuffer[m.offset++] = this.material.specular?.b || 0;
-    // padding
-    m.offset++;
-    // vec3 refraction;
-    floatBuffer[m.offset++] = this.material.refraction?.r || 0;
-    floatBuffer[m.offset++] = this.material.refraction?.g || 0;
-    floatBuffer[m.offset++] = this.material.refraction?.b || 0;
-    // padding
-    m.offset++;
+  bufferCount() {
+    return {
+      vertex: 8,
+      mesh: meshBytes,
+      slab: 0,
+    };
   }
 
-  freeze(material: Material) {
-    super.freeze(material);
-    return [8, meshBytes, 0] as [number, number, number];
+  bufferAppend(buffers: Buffers) {
+    buffers.vertex.append(new Float32Array([...this.origin, ...this.normal]));
+    buffers.mesh.append({
+      // -1 face number denotes a parameterized object
+      faceCount: -1,
+      vertexOffset: buffers.vertex.cursor / 4,
+      specularExponent: this.material.specularExponent!,
+      specularColor: this.material.specular!,
+      diffuseColor: this.material.color!,
+      refractionColor: this.material.refraction!,
+    });
+  }
+
+  freeze() {
+    this.commit();
   }
 
   commit() {

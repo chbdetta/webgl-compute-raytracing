@@ -2,6 +2,7 @@ import { mat4 } from "gl-matrix";
 import Material from "../material";
 import BaseObject from "./base";
 import Color from "../color";
+import { ToBuffer, BuffersLength, Buffers } from "../buffer";
 
 export type RenderCallback = (
   vertices: Float32Array,
@@ -9,17 +10,9 @@ export type RenderCallback = (
   model: mat4
 ) => void;
 
-export type RenderObjectBuffers = {
-  meshes: RenderObjectBuffer<ArrayBuffer>;
-  vertices: RenderObjectBuffer<Float32Array>;
-  slabs: RenderObjectBuffer<Float32Array>;
-};
-
-export type RenderObjectBuffer<T> = {
-  buffer: T;
-  offset: number;
-};
-
+/**
+ * A RenderObject would be rendered into the scene, it can have material
+ */
 export default abstract class RenderObject extends BaseObject {
   parent: RenderObject;
   material: Material;
@@ -59,11 +52,6 @@ export default abstract class RenderObject extends BaseObject {
     return this;
   }
 
-  /**
-   * Create data describing the render object.
-   */
-  abstract createData(buffers: RenderObjectBuffers): void;
-
   abstract render(
     cb: RenderCallback,
     material: Material | void,
@@ -76,7 +64,7 @@ export default abstract class RenderObject extends BaseObject {
     time: number
   ): void;
 
-  freeze(material: Material) {
+  mergeMaterial(material: Material) {
     material = this.material.merge(material);
 
     if (
@@ -92,12 +80,20 @@ export default abstract class RenderObject extends BaseObject {
     }
 
     this.material = material;
-    return [-1, -1, -1] as [number, number, number];
   }
+
+  /**
+   * Freeze the object and generate a static data.
+   * Frozen objects can't be updated anymore
+   */
+  abstract freeze(): void;
 
   child(name: string): RenderObject {
     return void 0 as any;
   }
 
   abstract clone(preserveModelMatrix: boolean): RenderObject;
+
+  abstract bufferAppend(buffers: Buffers): void;
+  abstract bufferCount(): BuffersLength;
 }

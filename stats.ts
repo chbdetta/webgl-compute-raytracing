@@ -1,16 +1,18 @@
+import { StatsBuffer } from "./buffer";
+
 class Stats {
   static ItemSize = 5;
 
   width: number;
   height: number;
 
-  buffer: Float32Array;
+  buffer: StatsBuffer;
   data: number[];
   prev = 0;
   delta = 0;
 
   constructor(localX: number, localY: number) {
-    this.buffer = new Float32Array(Stats.ItemSize * localX * localY);
+    this.buffer = new StatsBuffer(Stats.ItemSize * localX * localY);
     this.data = new Array(4).fill(0);
   }
 
@@ -39,22 +41,23 @@ class Stats {
   }
 
   reduce() {
-    const localSize = this.buffer.length / Stats.ItemSize;
+    const buffer = this.buffer.buffer;
+    const localSize = buffer.length / Stats.ItemSize;
 
     for (let i = 0; i < Stats.ItemSize; i++) {
-      this.data[i] = this.buffer[i * localSize];
-      for (let j = 1; j < this.buffer.length / Stats.ItemSize; j++) {
+      this.data[i] = buffer[i * localSize];
+      for (let j = 1; j < buffer.length / Stats.ItemSize; j++) {
         if (i === 0) {
-          this.data[i] += (this.buffer[i * localSize + j] - this.data[i]) / j;
+          this.data[i] += (buffer[i * localSize + j] - this.data[i]) / j;
         } else {
-          this.data[i] += this.buffer[i * localSize + j];
+          this.data[i] += buffer[i * localSize + j];
         }
       }
     }
   }
 
   reset() {
-    this.buffer.fill(0);
+    this.buffer.buffer.fill(0);
     this.data.fill(0);
   }
 }

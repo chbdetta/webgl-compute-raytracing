@@ -6,19 +6,25 @@ import {
   Cylinder,
   Rectangle,
   Tetrahedron,
+  BaseObject,
 } from "./object";
 import Color from "./color";
 import Material from "./material";
 import Camera from "./camera";
 import Timer from "./timer";
+import {
+  Buffers,
+  VertexBuffer,
+  MeshBuffer,
+  SlabBuffer,
+  LightBuffer,
+} from "./buffer";
 
 export default class World {
   name: string;
-  objects: Map<string, RenderObject> = new Map();
+  objects: Map<string, BaseObject> = new Map();
 
-  vertices: Float32Array;
-  meshes: ArrayBuffer;
-  slabs: Float32Array;
+  buffers: Buffers;
 
   ambient: Color;
 
@@ -62,35 +68,33 @@ export default class World {
   }
 
   freeze() {
-    const c = [0, 0, 0];
+    const c = {
+      vertex: 0,
+      mesh: 0,
+      slab: 0,
+    };
     for (let [, o] of this.objects) {
-      const counts = o.freeze(this.baseMaterial);
-      c[0] += counts[0];
-      c[1] += counts[1];
-      c[2] += counts[2];
+      if (o instanceof RenderObject) {
+        o.mergeMaterial(this.baseMaterial);
+      }
+
+      const counts = o.bufferCount();
+
+      c.vertex += counts.vertex ?? 0;
+      c.mesh += counts.mesh ?? 0;
+      c.slab += counts.slab ?? 0;
     }
 
-    this.vertices = new Float32Array(c[0]);
-    this.meshes = new ArrayBuffer(c[1] * 4);
-    this.slabs = new Float32Array(c[2]);
-
-    const buffers = {
-      vertices: {
-        buffer: this.vertices,
-        offset: 0,
-      },
-      meshes: {
-        buffer: this.meshes,
-        offset: 0,
-      },
-      slabs: {
-        buffer: this.slabs,
-        offset: 0,
-      },
+    // create the buffers
+    this.buffers = {
+      vertex: new VertexBuffer(c.vertex),
+      mesh: new MeshBuffer(c.mesh * 4),
+      slab: new SlabBuffer(c.slab),
+      light: new LightBuffer(0),
     };
 
     for (const [, o] of this.objects) {
-      o.createData(buffers);
+      o.bufferAppend(this.buffers);
     }
   }
 
@@ -447,22 +451,20 @@ export default class World {
 //   return g;
 // }
 
-export const worlds = {
-  test: new World(
-    "test",
+export const worlds = [
+  new World(
+    "Complex Scene",
     new Camera({ ratio: 12 / 8, eye: [0, 0, -10], at: [0, 0, 0] }),
     function () {
-      this.ambient = new Color(0.5, 0.5, 0.6);
+      this.ambient = Color.WHITE;
 
-      // this.addObject(
-      //   new Rectangle("wall-light")
-      //     .translate(0, 0, 5)
-      //     .rotate(180, 0, 1, 0)
-      //     .scale(10)
-      //     .setEmission(new Color(1, 1, 0.9))
-      //     .setEmissionIntensity(2)
-      //     .commit()
-      // );
+      this.addObject(
+        new Rectangle("wall-light")
+          .translate(0, 0, 5)
+          .rotate(180, 0, 1, 0)
+          .scale(10)
+          .commit()
+      );
       this.addObject(
         new Tetrahedron()
           .translate(-2, 0, -8)
@@ -555,17 +557,19 @@ export const worlds = {
           .translate(0, 0, -12)
           .scale(8)
           .setColor(Color.BLACK)
+          .setRefraction(Color.BLACK)
           .setSpecular(Color.WHITE)
           .setSpecularExponent(Material.MIRROR)
           .commit()
       );
     }
   ),
-  cube: new World(
-    "world",
-    new Camera({ ratio: 12 / 8, eye: [0, 0, -10], at: [0, 0, 0] }),
+  new World(
+    "Sphere",
+    new Camera({ ratio: 12 / 8, eye: [0, 0, 5], at: [0, 0, 0] }),
     function (w) {
-      w.addObject(new Cube());
+      w.ambient = Color.WHITE;
+      w.addObject(new Sphere("sphere"));
     }
   ),
   // at: new World("AT-AT", new Camera(1, [-10, 1, -10], [0, 5, -2]), function () {
@@ -619,4 +623,4 @@ export const worlds = {
 
   //   this.addObject(buildATAT().translate(0, 6.7, 0));
   // }),
-};
+];

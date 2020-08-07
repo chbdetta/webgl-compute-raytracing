@@ -5,15 +5,24 @@ import blitShader from "./blit.comp";
 import World from "./world";
 import Stats from "./stats";
 import Camera from "./camera";
+import { Buffers, Buffer } from "./buffer";
 
 // 2D local invocation
 const LOCAL_X = 16;
 const LOCAL_Y = 16;
 
-type Buffer = {
+type BufferDescriptor = {
   name: string;
   length: number;
   buffer: WebGLBuffer;
+};
+
+type BufferDescriptors = {
+  vertex: BufferDescriptor | null;
+  mesh: BufferDescriptor | null;
+  slab: BufferDescriptor | null;
+  light: BufferDescriptor | null;
+  stats: BufferDescriptor | null;
 };
 
 export default class Renderer {
@@ -29,15 +38,11 @@ export default class Renderer {
   uniforms: {
     [name: string]: WebGLUniformLocation;
   };
-  buffers: {
-    vertices: Buffer | null;
-    meshes: Buffer | null;
-    slabs: Buffer | null;
-    stats: Buffer | null;
-  } = {
-    vertices: null,
-    meshes: null,
-    slabs: null,
+  buffers: BufferDescriptors = {
+    vertex: null,
+    mesh: null,
+    slab: null,
+    light: null,
     stats: null,
   };
 
@@ -62,7 +67,7 @@ export default class Renderer {
 
       this.#world.camera.update();
 
-      this.sendBuffer();
+      this.sendWorldBuffer();
     }
   }
 
@@ -203,47 +208,33 @@ export default class Renderer {
       accumulatedTex: gl.getUniformLocation(program, "accumulatedTex")!,
     };
 
+    this.sendStatsBuffer();
+
     return [program, blitProgram];
   }
 
-  sendBuffer() {
-    if (!this.#world) return;
+  sendBuffer(name: keyof BufferDescriptors, buffer: Buffer) {
+    const { gl } = this;
+    this.buffers[name] = buffer.createWebGLBuffer(gl);
+    gl.bufferData(gl.SHADER_STORAGE_BUFFER, buffer.buffer, gl.STATIC_COPY);
+    this.buffers[name]!.length = buffer.buffer.byteLength / 4;
+  }
 
-    const buffers: ["stats", "vertices", "meshes", "slabs"] = [
-      "stats",
-      "vertices",
-      "meshes",
-      "slabs",
-    ];
+  sendStatsBuffer() {
+    this.sendBuffer("stats", this.stats.buffer);
+  }
+
+  sendWorldBuffer() {
+    if (!this.#world) return;
 
     // create and bind buffers
     const { gl } = this;
 
-    for (const name of buffers) {
-      const id = gl.createBuffer();
-      const binding = buffers.indexOf(name);
-
-      this.buffers[name] = {
-        name,
-        buffer: id as WebGLBuffer,
-        length: 0,
-      };
-
-      gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, id);
-      // Important! Tell the buffer to bind to a specific binding point
-      gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, binding, id);
-
-      let data;
-      let mode;
-      if (name === "stats") {
-        data = this.stats.buffer;
-        mode = gl.DYNAMIC_DRAW;
-      } else {
-        data = this.#world[name];
-        mode = gl.STATIC_COPY;
-      }
-      gl.bufferData(gl.SHADER_STORAGE_BUFFER, data, mode);
-      this.buffers[name]!.length = data.byteLength / 4;
+    for (const [name, buffer] of Object.entries(this.#world.buffers) as [
+      keyof Buffers,
+      Buffer
+    ][]) {
+      this.sendBuffer(name, buffer);
     }
   }
 
@@ -286,7 +277,11 @@ export default class Renderer {
     // for fps
     this.stats.prev = performance.now();
 
-    this.gl.bufferSubData(this.gl.SHADER_STORAGE_BUFFER, 0, this.stats.buffer);
+    this.gl.bufferSubData(
+      this.gl.SHADER_STORAGE_BUFFER,
+      0,
+      this.stats.buffer.buffer
+    );
 
     // dispatch compute work group number
     this.gl.dispatchCompute(this.width / LOCAL_X, this.height / LOCAL_Y, 1);
@@ -295,7 +290,7 @@ export default class Renderer {
     this.gl.getBufferSubData(
       this.gl.SHADER_STORAGE_BUFFER,
       0,
-      this.stats.buffer
+      this.stats.buffer.buffer
     );
 
     this.stats.reduce();
