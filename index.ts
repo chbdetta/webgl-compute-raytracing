@@ -24,9 +24,6 @@ function main() {
     return;
   }
 
-  renderer.world = worlds[0];
-  renderer.world.camera.setRatio(ratio);
-
   const tick = () => {
     renderer.render();
 
@@ -85,6 +82,28 @@ function main() {
     renderer.height = window.innerHeight;
     renderer.world?.camera.setRatio(renderer.width / renderer.height);
   });
+
+  const worldSelector = document.getElementById(
+    "world-selector"
+  )! as HTMLSelectElement;
+
+  worlds.forEach(({ name }, i) => {
+    const option = document.createElement("option");
+    option.value = String(i);
+    option.innerText = name;
+    worldSelector.appendChild(option);
+  });
+
+  document
+    .getElementById("world-selector")
+    ?.addEventListener("change", function () {
+      const worldIndex = ~~(this as HTMLSelectElement).value;
+      console.log(worldIndex);
+      renderer.world = worlds[worldIndex];
+    });
+
+  worldSelector.value = "0";
+  worldSelector.dispatchEvent(new InputEvent("change"));
 
   tick();
 }

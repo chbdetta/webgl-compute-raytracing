@@ -11,24 +11,37 @@
         overflow: hidden;
       }
       .hud {
-        color: white;
-        position: fixed;
-        bottom: 0;
+        position: absolute;
         left: 0;
-        font-family: Arial, Helvetica, sans-serif;
         font-size: 12px;
+        z-index: 10;
+      }
+
+      .top {
+        top: 0;
+        padding: 10px;
+      }
+
+      .stats {
+        bottom: 0;
+        color: white;
         background-color: rgba(0, 0, 0, 0.3);
         padding: 5px 20px;
         display: flex;
+        font-family: Arial, Helvetica, sans-serif;
       }
-      .hud > div {
+
+      .stats > div {
         margin-right: 15px;
       }
     </style>
   </head>
   <body>
     <canvas id="canvas" width="400" height="400"></canvas>
-    <div class="hud">
+    <div class="hud top">
+      <select id="world-selector"></select>
+    </div>
+    <div class="hud stats">
       <div>Main rays: <span id="main-rays"></span></div>
       <div>All rays: <span id="rays"></span></div>
       <div>FPS: <span id="fps"></span></div>
