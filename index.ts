@@ -11,8 +11,6 @@ function main() {
   WIDTH = window.innerWidth;
   HEIGHT = window.innerHeight;
 
-  const ratio = WIDTH / HEIGHT;
-
   try {
     renderer = new Renderer(canvas, WIDTH, HEIGHT);
   } catch (e) {
@@ -111,8 +109,11 @@ function main() {
   } else {
     worldSelector.value = "0";
   }
-
   worldSelector.dispatchEvent(new InputEvent("change"));
+
+  document.getElementById("reset")?.addEventListener("click", () => {
+    renderer.world.camera.reset();
+  });
 
   tick();
 }

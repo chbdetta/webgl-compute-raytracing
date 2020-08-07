@@ -6,7 +6,6 @@ enum Event {
 }
 
 type CameraJSON = {
-  ratio: number;
   eye: vec3;
   at: vec3;
   up: vec3;
@@ -16,6 +15,7 @@ type CameraJSON = {
 export default class Camera extends EventEmitter {
   // events
   static CHANGE = Event.CHANGE;
+  initialConfig: CameraJSON;
 
   eye: vec3;
   at: vec3;
@@ -61,13 +61,20 @@ export default class Camera extends EventEmitter {
   }) {
     super();
 
-    this.eye = eye || vec3.clone([0, 0, -3]);
-    this.at = at || vec3.clone([0, 0, 0]);
-    this.up = up || vec3.clone([0, 1, 0]);
+    this.eye = eye || [0, 0, -3];
+    this.at = at || [0, 0, 0];
+    this.up = up || [0, 1, 0];
     this.ratio = ratio;
     this.fov = fov ?? Math.PI / 4;
     this.#NDCToScreen = mat4.create();
     this.#panMatrix = mat4.create();
+
+    this.initialConfig = {
+      eye: vec3.clone(this.eye),
+      at: vec3.clone(this.at),
+      up: vec3.clone(this.up),
+      fov: this.fov,
+    };
 
     mat4.identity(this.#NDCToScreen);
     mat4.translate(this.#NDCToScreen, this.#NDCToScreen, [-1, -1, 0]);
@@ -96,7 +103,6 @@ export default class Camera extends EventEmitter {
 
   json(): CameraJSON {
     return {
-      ratio: this.ratio,
       eye: this.eye,
       at: this.at,
       up: this.up,
@@ -104,8 +110,11 @@ export default class Camera extends EventEmitter {
     };
   }
 
+  reset() {
+    this.parse(this.initialConfig);
+  }
+
   parse(data: CameraJSON) {
-    this.ratio = data.ratio;
     this.eye = data.eye;
     this.at = data.at;
     this.up = data.up;

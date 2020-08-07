@@ -50,24 +50,28 @@ export default class Renderer {
   frameTexture: WebGLTexture;
   accumulatedTexture: WebGLTexture;
 
-  #world: World | null;
+  #world: World;
 
   get world() {
     return this.#world;
   }
 
-  set world(world: World | null) {
+  set world(world: World) {
+    this.#world?.camera.removeListener(
+      Camera.CHANGE,
+      this.onCameraChange.bind(this)
+    );
+
     this.#world = world;
-    if (this.#world) {
-      this.#world.camera.addListener(Camera.CHANGE, () => {
-        this.renderTimes = 0;
-        this.completed = false;
-      });
 
-      this.#world.camera.update();
+    this.#world.camera.addListener(
+      Camera.CHANGE,
+      this.onCameraChange.bind(this)
+    );
+    this.#world.camera.setRatio(this.width / this.height);
+    this.#world.camera.update();
 
-      this.sendWorldBuffer();
-    }
+    this.sendWorldBuffer();
   }
 
   #width: number;
@@ -226,6 +230,11 @@ export default class Renderer {
     this.sendStatsBuffer();
 
     return [program, blitProgram];
+  }
+
+  onCameraChange() {
+    this.renderTimes = 0;
+    this.completed = false;
   }
 
   sendBuffer(name: keyof BufferDescriptors, buffer: Buffer) {
