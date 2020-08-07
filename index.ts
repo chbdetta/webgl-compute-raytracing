@@ -11,6 +11,8 @@ function main() {
   WIDTH = window.innerWidth;
   HEIGHT = window.innerHeight;
 
+  const ratio = WIDTH / HEIGHT;
+
   try {
     renderer = new Renderer(canvas, WIDTH, HEIGHT);
   } catch (e) {
@@ -23,7 +25,7 @@ function main() {
   }
 
   renderer.world = worlds[0];
-  renderer.world.camera.setRatio(WIDTH / HEIGHT);
+  renderer.world.camera.setRatio(ratio);
 
   const tick = () => {
     renderer.render();
@@ -76,6 +78,12 @@ function main() {
           break;
       }
     }
+  });
+
+  window.addEventListener("resize", () => {
+    renderer.width = window.innerWidth;
+    renderer.height = window.innerHeight;
+    renderer.world?.camera.setRatio(renderer.width / renderer.height);
   });
 
   tick();

@@ -30,11 +30,10 @@ export default class Renderer {
 
   stats: Stats;
 
+  canvas: HTMLCanvasElement;
   gl: WebGL2Context;
   renderProgram: WebGLProgram;
   blitProgram: WebGLProgram;
-  width: number;
-  height: number;
   uniforms: {
     [name: string]: WebGLUniformLocation;
   };
@@ -71,18 +70,34 @@ export default class Renderer {
     }
   }
 
+  #width: number;
+  get width() {
+    return this.#width;
+  }
+  set width(w) {
+    this.#width = Math.ceil(w / LOCAL_X) * LOCAL_X;
+    this.canvas.width = this.#width;
+  }
+
+  #height: number;
+  get height() {
+    return this.#height;
+  }
+  set height(h) {
+    this.#height = Math.ceil(h / LOCAL_Y) * LOCAL_Y;
+    this.canvas.height = this.#height;
+  }
+
   constructor(canvas: HTMLCanvasElement, width: number, height: number) {
+    this.canvas = canvas;
     this.gl = canvas.getContext("webgl2-compute", { antialias: false }) as any;
-
-    this.width = Math.ceil(width / LOCAL_X) * LOCAL_X;
-    this.height = Math.ceil(height / LOCAL_Y) * LOCAL_Y;
-
-    canvas.width = this.width;
-    canvas.height = this.height;
 
     if (!this.gl) {
       throw new Error("can not get webgl2 compute context");
     }
+
+    this.width = width;
+    this.height = height;
 
     this.stats = new Stats(LOCAL_X, LOCAL_Y);
 
