@@ -426,7 +426,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
       float refraction_factor = dot(mesh.refraction, oneThird3);
       float sum = diffuse_factor + specular_factor + refraction_factor;
 
-      if (sum == 0.0) {
+      if (sum <= EPSILON) {
         // no refraction, no diffuse and no reflection.
         // stop the light bounce
         r.energy = zero3;
@@ -472,7 +472,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
 
     } else {
       // hit nothing, we give an ambient light
-      ret += r.energy * uAmbient;
+      ret += r.energy * uAmbient / 2.0;
       r.energy = zero3;
     }
   }
@@ -481,7 +481,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
 
   stats.rayCount += f_depth;
 
-  return ret / f_depth;
+  return ret / f_depth * 2.0;
 }
 
 Ray create_camera_ray(vec2 uv) {

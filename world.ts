@@ -569,7 +569,11 @@ export const worlds = [
     new Camera({ ratio: 12 / 8, eye: [0, 0, 5], at: [0, 0, 0] }),
     function (w) {
       w.ambient = Color.WHITE;
-      w.addObject(new Sphere("sphere"));
+      w.addObject(
+        new Sphere("sphere")
+          .setColor(new Color(0.18, 0.18, 0.18))
+          .setSpecular(Color.BLACK)
+      );
     }
   ),
   // at: new World("AT-AT", new Camera(1, [-10, 1, -10], [0, 5, -2]), function () {
