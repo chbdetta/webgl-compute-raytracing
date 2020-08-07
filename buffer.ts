@@ -69,6 +69,8 @@ export class VertexBuffer extends Buffer {
 }
 
 export class MeshBuffer extends Buffer {
+  static byteLength = 20;
+
   buffer: ArrayBuffer;
   cursor = 0;
 

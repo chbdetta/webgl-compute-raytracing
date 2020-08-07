@@ -3,7 +3,7 @@ import { Face, PointFactory, UVFactory } from "../point";
 import Material from "../material";
 import RenderObject, { RenderCallback } from "./render";
 import Primitive from "./primitive";
-import { BuffersLength, Buffers } from "../buffer";
+import { BuffersLength, Buffers, MeshBuffer } from "../buffer";
 
 export { RenderCallback };
 
@@ -239,8 +239,6 @@ const rounded = (fn: (x: number) => number) => (x: number) => {
 const cos = rounded(Math.cos);
 const sin = rounded(Math.sin);
 
-const meshBytes = 24;
-
 export class Cylinder extends Primitive {
   static count = 0;
 
@@ -331,13 +329,12 @@ export class Sphere extends RenderObject {
   bufferCount() {
     return {
       vertex: 8,
-      mesh: meshBytes,
+      mesh: MeshBuffer.byteLength,
       slab: 0,
     };
   }
 
   bufferAppend(buffers: Buffers) {
-    buffers.vertex.append(new Float32Array([...this.origin, ...this.normal]));
     buffers.mesh.append({
       // -1 face number denotes a parameterized object
       faceCount: -1,
@@ -347,6 +344,9 @@ export class Sphere extends RenderObject {
       diffuseColor: this.material.color!,
       refractionColor: this.material.refraction!,
     });
+    buffers.vertex.append(
+      new Float32Array([...this.origin, 0, ...this.normal, 0])
+    );
   }
 
   freeze() {

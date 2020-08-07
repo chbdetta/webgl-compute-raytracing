@@ -3,9 +3,7 @@ import { Face, PointFactory } from "../point";
 import RenderObject, { RenderCallback } from "./render";
 import Material from "../material";
 import { Slab } from "./bounding-box";
-import { Buffers } from "../buffer";
-
-const meshBytes = 24;
+import { Buffers, MeshBuffer } from "../buffer";
 
 /**
  * We make some assumptions to improve the performance
@@ -151,7 +149,7 @@ export default class Primitive extends RenderObject {
 
     return {
       vertex: this.data.length,
-      mesh: meshBytes,
+      mesh: MeshBuffer.byteLength,
       slab: this.bbox.reduce(
         (acc, slab) => (slab.bufferCount().slab ?? 0) + acc,
         0
@@ -160,12 +158,6 @@ export default class Primitive extends RenderObject {
   }
 
   bufferAppend(buffer: Buffers) {
-    buffer.vertex.append(this.data);
-
-    for (const slab of this.bbox) {
-      buffer.slab.append(slab);
-    }
-
     buffer.mesh.append({
       faceCount: this.faces.length,
       vertexOffset: buffer.vertex.cursor / 4,
@@ -177,6 +169,12 @@ export default class Primitive extends RenderObject {
       diffuseColor: this.material.color!,
       refractionColor: this.material.refraction!,
     });
+
+    buffer.vertex.append(this.data);
+
+    for (const slab of this.bbox) {
+      buffer.slab.append(slab);
+    }
   }
 
   render(cb: RenderCallback, material: Material, time: number): void;
