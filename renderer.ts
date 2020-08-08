@@ -51,6 +51,7 @@ export default class Renderer {
   accumulatedTexture: WebGLTexture;
 
   #world: World;
+  #moving = 0;
 
   get world() {
     return this.#world;
@@ -225,6 +226,7 @@ export default class Renderer {
       uAmbient: gl.getUniformLocation(program, "uAmbient")!,
       frameTex: gl.getUniformLocation(program, "frameTex")!,
       accumulatedTex: gl.getUniformLocation(program, "accumulatedTex")!,
+      uGi: gl.getUniformLocation(program, "uGi")!,
     };
 
     this.sendStatsBuffer();
@@ -234,6 +236,16 @@ export default class Renderer {
 
   onCameraChange() {
     this.renderTimes = 0;
+
+    if (this.#moving) {
+      clearTimeout(this.#moving);
+    }
+
+    this.#moving = setTimeout(() => {
+      this.#moving = 0;
+      this.completed = false;
+    }, 100);
+
     this.completed = false;
   }
 
@@ -242,6 +254,8 @@ export default class Renderer {
     this.buffers[name] = buffer.createWebGLBuffer(gl);
     gl.bufferData(gl.SHADER_STORAGE_BUFFER, buffer.buffer, gl.STATIC_COPY);
     this.buffers[name]!.length = buffer.buffer.byteLength / 4;
+
+    console.log(name, buffer);
   }
 
   sendStatsBuffer() {
@@ -289,6 +303,9 @@ export default class Renderer {
       false,
       this.#world.camera.invertPerspective
     );
+
+    // GI switch
+    this.gl.uniform1i(this.uniforms.uGi, this.#moving ? 0 : 1);
 
     // reset diff to 0
     this.gl.bindBuffer(

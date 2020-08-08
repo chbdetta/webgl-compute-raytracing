@@ -163,11 +163,22 @@ export class SlabBuffer extends Buffer {
 }
 
 export class LightBuffer extends Buffer {
+  static bytes = 8;
+
   constructor(length: number) {
     super(4, length);
   }
 
-  append(lightData: { position: vec3; color: vec3; intensity: number }) {}
+  append(lightData: { position: vec3; color: Color; intensity: number }) {
+    this.appendF(lightData.position[0]);
+    this.appendF(lightData.position[1]);
+    this.appendF(lightData.position[2]);
+    this.pad(1);
+    this.appendF(lightData.color[0]);
+    this.appendF(lightData.color[1]);
+    this.appendF(lightData.color[2]);
+    this.appendI(lightData.intensity);
+  }
 }
 
 export class StatsBuffer extends Buffer {

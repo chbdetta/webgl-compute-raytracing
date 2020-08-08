@@ -19,6 +19,7 @@ import {
   SlabBuffer,
   LightBuffer,
 } from "./buffer";
+import { PointLight } from "./light";
 
 enum State {
   Created,
@@ -65,7 +66,7 @@ export default class World {
     const cache = localStorage.getItem(cameraCacheId);
     const cameraData = cache && JSON.parse(cache);
 
-    if (cache) {
+    if (cameraData) {
       this.camera.parse(cameraData);
     }
 
@@ -89,6 +90,7 @@ export default class World {
       vertex: 0,
       mesh: 0,
       slab: 0,
+      light: 0,
     };
     for (let [, o] of this.objects) {
       if (o instanceof RenderObject) {
@@ -100,6 +102,7 @@ export default class World {
       c.vertex += counts.vertex ?? 0;
       c.mesh += counts.mesh ?? 0;
       c.slab += counts.slab ?? 0;
+      c.light += counts.light ?? 0;
     }
 
     // create the buffers
@@ -107,20 +110,19 @@ export default class World {
       vertex: new VertexBuffer(c.vertex),
       mesh: new MeshBuffer(c.mesh),
       slab: new SlabBuffer(c.slab),
-      light: new LightBuffer(0),
+      light: new LightBuffer(c.light),
     };
 
     for (const [, o] of this.objects) {
       o.bufferAppend(this.buffers);
     }
+
+    return this;
   }
 
-  addObject(obj: RenderObject) {
+  add(obj: BaseObject) {
     this.objects.set(obj.name, obj);
-  }
-
-  addLight(obj: RenderObject) {
-    this.objects.set(obj.name, obj);
+    return this;
   }
 }
 
@@ -472,62 +474,70 @@ export const worlds = [
   new World(
     "Complex Scene",
     new Camera({ ratio: 12 / 8, eye: [0, 0, -10], at: [0, 0, 0] }),
-    function () {
-      this.ambient = Color.WHITE;
+    (w) => {
+      w.ambient = new Color(0.2, 0.23, 0.3);
+      // w.ambient = Color.BLACK;
 
-      this.addObject(
-        new Rectangle("wall-light")
-          .translate(0, 0, 5)
-          .rotate(180, 0, 1, 0)
-          .scale(10)
-          .commit()
-      );
-      this.addObject(
+      w.add(
+        new PointLight("sun", {
+          intensity: 200,
+          color: new Color(1, 1, 0.8),
+          position: [0, 20, 0],
+        })
+      )
+        .add(
+          new PointLight("ball", {
+            intensity: 10,
+            color: Color.RED,
+            position: [1, 0.2, -3],
+          })
+        )
+        .add(
+          new PointLight("ball 2", {
+            intensity: 5,
+            color: Color.BLUE,
+            position: [-4, 0.2, -3],
+          })
+        )
+        .add(
           new Tetrahedron()
             .translate(-2, 0, -8)
             .rotate(80, 0, 1, 0.5)
             .scale(2)
             .setColor(Color.WHITE)
-            .commit()
-      );
-      this.addObject(new Sphere().translate(-2, 1, 4).commit());
-
-      // objects
-      this.addObject(
+        )
+        .add(new Sphere().translate(-2, 1, 4).commit())
+        .add(
           new Sphere()
             .translate(-2, 0, -4)
             .setSpecular(Color.GRAY.mul(0.2))
             .setColor(Color.BLACK)
             .setSpecularExponent(Material.MIRROR)
             .setRefraction(Color.WHITE)
-            .commit()
-      );
-      this.addObject(
+        )
+        .add(
           new Sphere()
             .translate(-3, 2, -2)
             .scale(3)
-            .commit()
             .setColor(new Color(0.5, 0.4, 0.4))
             .setSpecular(new Color(1, 0.8, 0.6))
             .setSpecularExponent(Material.MIRROR)
-      );
-      this.addObject(
+        )
+        .add(
           new Sphere()
             .translate(-6, 0, 0)
             .setColor(new Color(1, 0.8, 0.5))
             .setSpecularExponent(50)
-            .commit()
             .setSpecular(Color.WHITE)
-      );
-      this.addObject(
+        )
+        .add(
           new Cube()
             .translate(-4, 0, 0)
             .rotate(45, 0, 1, 0)
             .setColor(Color.WHITE)
-            .commit()
             .setSpecular(Color.WHITE)
-      );
-      this.addObject(
+        )
+        .add(
           new Cylinder(20)
             .scale(1.5)
             .translate(1, 1, -1)
@@ -535,49 +545,51 @@ export const worlds = [
             .setColor(Color.BLACK)
             .setSpecular(Color.WHITE.mul(0.1))
             .setRefraction(Color.WHITE)
-            .commit()
-      );
-      this.addObject(
+        )
+        .add(
           new Cylinder(20)
             .setColor(new Color(0.6, 0.7, 1))
             .setSpecular(Color.WHITE)
-            .commit()
-      );
-      this.addObject(
+        )
+        .add(
           new Tetrahedron()
             .translate(1, 0, -1.5)
             .rotate(50, 1, 0.2, 0.4)
             .setRefraction(Color.WHITE)
             .setSpecular(Color.WHITE.mul(0.1))
-            .commit()
-      );
-      this.addObject(new Cube().translate(0, 0.5, -2).scale(0.5).commit());
-      this.addObject(
+        )
+        .add(new Cube().translate(0, 0.5, -2).scale(0.5).commit())
+        .add(
           new Cube()
             .translate(-2, 0, 1)
-            .commit()
             .setRefraction(new Color(1, 0.8, 0.5))
             .setColor(new Color(0.8, 0.6, 0.3))
-      );
-      this.addObject(
+        )
+        .add(
           new Rectangle("ground")
             .translate(0, -0.5, 0)
             .rotate(-90, 1, 0, 0)
             .scale(100)
             .setColor(Color.WHITE.mul(0.8))
-            .setSpecular(Color.WHITE)
+            .setSpecular(Color.WHITE.mul(0.3))
             .setSpecularExponent(1)
-            .commit()
-      );
-      this.addObject(
-          new Rectangle("wall")
-            .translate(0, 0, -12)
-            .scale(8)
-            .setColor(Color.BLACK)
-            .setRefraction(Color.BLACK)
+        )
+        .add(
+          new Rectangle("wall 1")
+            .translate(0, 0, 5)
+            .rotate(180, 0, 1, 0)
+            .scale(10)
             .setSpecular(Color.WHITE)
             .setSpecularExponent(Material.MIRROR)
-            .commit()
+            .setColor(Color.BLACK)
+        )
+        .add(
+          new Rectangle("wall 2")
+            .translate(0, 0, -12)
+            .scale(10)
+            .setColor(Color.BLACK)
+            .setSpecular(new Color(0.5, 0.8, 1))
+            .setSpecularExponent(Material.MIRROR)
         );
     }
   ),
@@ -586,10 +598,25 @@ export const worlds = [
     new Camera({ ratio: 12 / 8, eye: [0, 0, 5], at: [0, 0, 0] }),
     function (w) {
       w.ambient = Color.WHITE;
-      w.addObject(
+      w.add(
         new Sphere("sphere")
-          .setColor(new Color(0.18, 0.18, 0.18))
+          .setColor(new Color(0.5, 0.5, 0.5))
+          .setSpecular(Color.BLACK)
+      );
+    }
+  ),
+  new World(
+    "Two Sphere",
+    new Camera({ ratio: 12 / 8, eye: [0, 0, 5], at: [0, 0, 0] }),
+    (w) => {
+      w.ambient = Color.WHITE;
+      w.baseMaterial = new Material()
+        .setColor(new Color(0.5, 0.5, 0.5))
         .setSpecular(Color.BLACK)
+        .setSpecularExponent(1);
+
+      w.add(new Sphere("sphere 1").setTranslate(0.8, 0, 0)).add(
+        new Sphere("sphere 2").setTranslate(-0.8, 0, 0)
       );
     }
   ),

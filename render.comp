@@ -16,7 +16,7 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 layout (rgba8, binding = 0) writeonly uniform highp image2D frameTex;
 layout (rgba8, binding = 1) readonly uniform highp image2D accumulatedTex;
 
-#define EPSILON 0.001
+#define EPSILON 0.00001
 #define MAX_FLOAT 3.402823466e+38
 #define M_PI 3.14159265358979323846
 #define M_TWO_PI 6.28318530718
@@ -80,6 +80,16 @@ layout(std430, binding = 3) readonly buffer BoudingBoxes {
   Slab slabs[];
 };
 
+struct Light {
+  vec3 position;
+  vec3 color;
+  int intensity;
+};
+
+layout(std430, binding = 4) readonly buffer Lights {
+  Light lights[];
+};
+
 
 uniform float uSeed;
 uniform int uRenderTimes;
@@ -88,6 +98,8 @@ uniform mat4 uViewInverse;
 uniform mat4 uProjectionInverse;
 
 uniform vec3 uAmbient;
+
+uniform bool uGi;
 
 //
 // Pseudo random numbers generator.
@@ -376,7 +388,7 @@ vec3 refract_dir(vec3 normal, vec3 dir, float ior) {
   return ior * dir + (ior * c1 - c2) * normal;
 }
 
-const int max_depth = 10;
+const int max_depth = 5;
 // get the color of a ray
 vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
   int depth = 1;
@@ -384,8 +396,17 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
   int mesh_index;
   vec3 normal;
   vec3 ret = zero3;
+  vec3 direct = zero3;
+  vec3 indirect = zero3;
 
-  while (depth < max_depth && length(r.energy) > EPSILON) {
+  int effective_max_depth;
+  if (uGi) {
+    effective_max_depth = max_depth;
+  } else {
+    effective_max_depth = 3;
+  }
+
+  while (depth < effective_max_depth && length(r.energy) > EPSILON) {
     if (hit_mesh(r, 0.01, MAX_FLOAT, at, mesh_index, normal, stats)) {
 
       Mesh mesh = meshes[mesh_index];
@@ -413,6 +434,20 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
       //     depth -= 1;
       //   }
       // }
+
+      // direct shadow
+      for (int i = 0; i < lights.length(); i++) {
+        Light l = lights[i];
+        Ray sr;
+        sr.origin = hit_point + surface_normal * EPSILON;
+        vec3 dd = l.position - hit_point;
+        sr.dir = normalize(dd);
+        float d = dot(dd, dd);
+
+        if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
+          direct += r.energy * l.color * float(l.intensity) * mesh.color / d;
+        }
+      }
 
       float diffuse_factor = dot(mesh.color, oneThird3);
       float specular_factor = dot(mesh.specular, oneThird3);
@@ -472,7 +507,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
 
     } else {
       // hit nothing, we give an ambient light
-      ret += r.energy * uAmbient;
+      indirect += r.energy * uAmbient;
       r.energy = zero3;
     }
   }
@@ -481,7 +516,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
 
   stats.rayCount += f_depth;
 
-  return ret / f_depth * 2.0;
+  return (indirect + direct) / f_depth * 2.0;
 }
 
 Ray create_camera_ray(vec2 uv) {
