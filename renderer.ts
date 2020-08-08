@@ -63,7 +63,7 @@ export default class Renderer {
     );
 
     this.#world = world;
-
+    this.#world.init();
     this.#world.camera.addListener(
       Camera.CHANGE,
       this.onCameraChange.bind(this)
