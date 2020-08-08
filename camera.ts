@@ -115,9 +115,9 @@ export default class Camera extends EventEmitter {
   }
 
   parse(data: CameraJSON) {
-    this.eye = data.eye;
-    this.at = data.at;
-    this.up = data.up;
+    this.eye = vec3.clone(data.eye);
+    this.at = vec3.clone(data.at);
+    this.up = vec3.clone(data.up);
     this.fov = data.fov;
 
     this.update();
