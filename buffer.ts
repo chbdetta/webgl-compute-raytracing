@@ -169,15 +169,20 @@ export class LightBuffer extends Buffer {
     super(4, length);
   }
 
-  append(lightData: { position: vec3; color: Color; intensity: number }) {
+  append(lightData: {
+    position: vec3;
+    color: Color;
+    intensity: number;
+    radius: number;
+  }) {
     this.appendF(lightData.position[0]);
     this.appendF(lightData.position[1]);
     this.appendF(lightData.position[2]);
-    this.pad(1);
+    this.appendF(lightData.radius);
     this.appendF(lightData.color[0]);
     this.appendF(lightData.color[1]);
     this.appendF(lightData.color[2]);
-    this.appendI(lightData.intensity);
+    this.appendF(lightData.intensity);
   }
 }
 

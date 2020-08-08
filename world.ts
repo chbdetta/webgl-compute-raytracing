@@ -475,27 +475,29 @@ export const worlds = [
     "Complex Scene",
     new Camera({ ratio: 12 / 8, eye: [0, 0, -10], at: [0, 0, 0] }),
     (w) => {
-      w.ambient = new Color(0.2, 0.23, 0.3);
-      // w.ambient = Color.BLACK;
+      w.ambient = new Color(0.03, 0.05, 0.1);
 
       w.add(
         new PointLight("sun", {
-          intensity: 200,
+          intensity: 100,
+          radius: 5,
           color: new Color(1, 1, 0.8),
           position: [0, 20, 0],
         })
       )
         .add(
           new PointLight("ball", {
-            intensity: 10,
-            color: Color.RED,
+            intensity: 0.1,
+            radius: 0.5,
+            color: new Color(1, 0.4, 0.4),
             position: [1, 0.2, -3],
           })
         )
         .add(
           new PointLight("ball 2", {
-            intensity: 5,
-            color: Color.BLUE,
+            intensity: 0.1,
+            radius: 0.5,
+            color: new Color(0.1, 0.3, 1),
             position: [-4, 0.2, -3],
           })
         )
@@ -534,8 +536,9 @@ export const worlds = [
           new Cube()
             .translate(-4, 0, 0)
             .rotate(45, 0, 1, 0)
-            .setColor(Color.WHITE)
-            .setSpecular(Color.WHITE)
+            .setColor(new Color(1, 0.8, 0.2))
+            .setSpecular(new Color(1, 0.5, 0.4))
+            .setSpecularExponent(400)
         )
         .add(
           new Cylinder(20)
@@ -558,7 +561,6 @@ export const worlds = [
             .setRefraction(Color.WHITE)
             .setSpecular(Color.WHITE.mul(0.1))
         )
-        .add(new Cube().translate(0, 0.5, -2).scale(0.5).commit())
         .add(
           new Cube()
             .translate(-2, 0, 1)

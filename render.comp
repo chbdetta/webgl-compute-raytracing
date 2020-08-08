@@ -82,8 +82,9 @@ layout(std430, binding = 3) readonly buffer BoudingBoxes {
 
 struct Light {
   vec3 position;
+  float radius;
   vec3 color;
-  int intensity;
+  float intensity;
 };
 
 layout(std430, binding = 4) readonly buffer Lights {
@@ -440,12 +441,14 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
         Light l = lights[i];
         Ray sr;
         sr.origin = hit_point + surface_normal * EPSILON;
-        vec3 dd = l.position - hit_point;
+        vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), 1.0, seed, pixel) * l.radius;
+
+        vec3 dd = random_point - hit_point;
         sr.dir = normalize(dd);
         float d = dot(dd, dd);
 
         if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
-          direct += r.energy * l.color * float(l.intensity) * mesh.color / d;
+          direct += r.energy * l.color * l.intensity * mesh.color / d * M_TWO_PI;
         }
       }
 
@@ -516,7 +519,10 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
 
   stats.rayCount += f_depth;
 
-  return (indirect + direct) / f_depth * 2.0;
+  // FIXME: verify the reason we need to multiply 2.0 here.
+  // according to the furnance test, we got half the brightness if we don't multiply 2.0
+  // but what is wrong?
+  return (indirect * 2.0 + direct) / f_depth;
 }
 
 Ray create_camera_ray(vec2 uv) {
