@@ -376,7 +376,7 @@ vec3 refract_dir(vec3 normal, vec3 dir, float ior) {
   return ior * dir + (ior * c1 - c2) * normal;
 }
 
-const int max_depth = 6;
+const int max_depth = 10;
 // get the color of a ray
 vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
   int depth = 1;
@@ -442,7 +442,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
           r.origin = hit_point + EPSILON * surface_normal;
           r.dir = sample_hemisphere_uniform(reflect_dir(surface_normal, r.dir), mesh.alpha, seed, pixel);
           float f = (mesh.alpha + 2.0) / (mesh.alpha + 1.0);
-          r.energy *= (1.0 / specular_factor) * mesh.specular * max(0.0, dot(surface_normal, r.dir) * f);
+          r.energy *= (1.0 / specular_factor) * mesh.specular * f;
         } else if (chance < specular_factor + diffuse_factor) {
           // diffuse
           r.origin = hit_point + EPSILON * surface_normal;
@@ -472,7 +472,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
 
     } else {
       // hit nothing, we give an ambient light
-      ret += r.energy * uAmbient / 2.0;
+      ret += r.energy * uAmbient;
       r.energy = zero3;
     }
   }
