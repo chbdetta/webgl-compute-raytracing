@@ -19,13 +19,25 @@ export default class Color {
   get r() {
     return this.data[0];
   }
+  get 0() {
+    return this.data[0];
+  }
   get g() {
+    return this.data[1];
+  }
+  get 1() {
     return this.data[1];
   }
   get b() {
     return this.data[2];
   }
+  get 2() {
+    return this.data[2];
+  }
   get a() {
+    return this.alpha;
+  }
+  get 3() {
     return this.alpha;
   }
 
