@@ -1,5 +1,6 @@
 import { Slab } from "./object/bounding-box";
 import Color from "color";
+import { vec3 } from "gl-matrix";
 
 /**
  * ToBuffer denotes the object that can serialize itself
@@ -14,7 +15,7 @@ export interface BuffersLength {
   mesh?: number;
   vertex?: number;
   slab?: number;
-  light?: LightBuffer;
+  light?: number;
 }
 
 export interface Buffers {
@@ -30,9 +31,17 @@ export interface Buffer {
 }
 
 export class Buffer implements Buffer {
+  cursor = 0;
+  buffer: ArrayBuffer;
   bindingPoint: number;
+  i32: Int32Array;
+  f32: Float32Array;
 
-  constructor(bindingPoint: number) {
+  constructor(bindingPoint: number, length: number) {
+    // we only use Int32 and Float32, so 4 bytes for each item
+    this.buffer = new ArrayBuffer(length * 4);
+    this.i32 = new Int32Array(this.buffer);
+    this.f32 = new Float32Array(this.buffer);
     this.bindingPoint = bindingPoint;
   }
 
@@ -49,34 +58,39 @@ export class Buffer implements Buffer {
       length: 0,
     };
   }
+
+  appendF(n: number) {
+    this.f32[this.cursor++] = n;
+  }
+  appendI(n: number) {
+    this.i32[this.cursor++] = n;
+  }
+  pad(n: number) {
+    this.cursor += n;
+  }
 }
 
 export class VertexBuffer extends Buffer {
-  buffer: Float32Array;
-  cursor = 0;
+  static bytes = 4;
 
   constructor(length: number) {
-    super(1);
-    this.buffer = new Float32Array(length);
+    super(1, length);
   }
 
-  append(vertices: Float32Array) {
+  append(v: vec3) {
     // copy vertices data to the buffer
-    for (const v of vertices) {
-      this.buffer[this.cursor++] = v;
-    }
+    this.appendF(v[0]);
+    this.appendF(v[1]);
+    this.appendF(v[2]);
+    this.pad(1);
   }
 }
 
 export class MeshBuffer extends Buffer {
-  static byteLength = 20;
-
-  buffer: ArrayBuffer;
-  cursor = 0;
+  static bytes = 20;
 
   constructor(length: number) {
-    super(2);
-    this.buffer = new ArrayBuffer(length);
+    super(2, length);
   }
 
   append(meshData: {
@@ -97,75 +111,67 @@ export class MeshBuffer extends Buffer {
     // padding required: https://twitter.com/9ballsyndrome/status/1178039885090848770
     // under std430 layout, a struct in an array use the largest alignment of its member.
     // int face_count;
-    intBuffer[this.cursor++] = meshData.faceCount;
+    this.appendI(meshData.faceCount);
     // int offset;
-    intBuffer[this.cursor++] = meshData.vertexOffset;
+    this.appendI(meshData.vertexOffset);
     // int slab_count
-    intBuffer[this.cursor++] = meshData.slabCount ?? 0;
+    this.appendI(meshData.slabCount ?? 0);
     // int slab_offset;
-    intBuffer[this.cursor++] = meshData.slabOffset ?? 0;
+    this.appendI(meshData.slabOffset ?? 0);
     // alpha
-    floatBuffer[this.cursor++] = meshData.specularExponent || 100;
+    this.appendF(meshData.specularExponent ?? 100);
     // paddings
-    this.cursor += 3;
+    this.pad(3);
 
     // vec3 color;
-    floatBuffer[this.cursor++] = meshData.diffuseColor?.r || 0;
-    floatBuffer[this.cursor++] = meshData.diffuseColor?.g || 0;
-    floatBuffer[this.cursor++] = meshData.diffuseColor?.b || 0;
+    this.appendF(meshData.diffuseColor?.r ?? 0);
+    this.appendF(meshData.diffuseColor?.g ?? 0);
+    this.appendF(meshData.diffuseColor?.b ?? 0);
     // padding
-    this.cursor++;
+    this.pad(1);
     // vec3 specular
-    floatBuffer[this.cursor++] = meshData.specularColor?.r || 0;
-    floatBuffer[this.cursor++] = meshData.specularColor?.g || 0;
-    floatBuffer[this.cursor++] = meshData.specularColor?.b || 0;
+    this.appendF(meshData.specularColor?.r ?? 0);
+    this.appendF(meshData.specularColor?.g ?? 0);
+    this.appendF(meshData.specularColor?.b ?? 0);
     // padding
-    this.cursor++;
+    this.pad(1);
     // vec3 refraction;
-    floatBuffer[this.cursor++] = meshData.refractionColor?.r || 0;
-    floatBuffer[this.cursor++] = meshData.refractionColor?.g || 0;
-    floatBuffer[this.cursor++] = meshData.refractionColor?.b || 0;
+    this.appendF(meshData.refractionColor?.r ?? 0);
+    this.appendF(meshData.refractionColor?.g ?? 0);
+    this.appendF(meshData.refractionColor?.b ?? 0);
     // padding
-    this.cursor++;
+    this.pad(1);
   }
 }
 
 // for the bounding box
 export class SlabBuffer extends Buffer {
-  buffer: Float32Array;
-  cursor = 0;
+  static bytes = 8;
 
   constructor(length: number) {
-    super(3);
-    this.buffer = new Float32Array(length);
+    super(3, length);
   }
 
   append(slab: Slab) {
-    this.buffer[this.cursor++] = slab.normal[0];
-    this.buffer[this.cursor++] = slab.normal[1];
-    this.buffer[this.cursor++] = slab.normal[2];
-    this.buffer[this.cursor++] = slab.near;
-    this.buffer[this.cursor++] = slab.far;
-    this.cursor += 3;
+    this.appendF(slab.normal[0]);
+    this.appendF(slab.normal[1]);
+    this.appendF(slab.normal[2]);
+    this.appendF(slab.near);
+    this.appendF(slab.far);
+    this.pad(3);
   }
 }
 
 export class LightBuffer extends Buffer {
-  buffer: ArrayBuffer;
-
   constructor(length: number) {
-    super(4);
-    this.buffer = new ArrayBuffer(length);
+    super(4, length);
   }
 
-  append(obj: {}) {}
+  append(lightData: { position: vec3; color: vec3; intensity: number }) {}
 }
 
 export class StatsBuffer extends Buffer {
-  buffer: Float32Array;
-
   constructor(length: number) {
-    super(0);
-    this.buffer = new Float32Array(length);
+    super(0, length);
   }
 }

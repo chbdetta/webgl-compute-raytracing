@@ -105,7 +105,7 @@ export default class World {
     // create the buffers
     this.buffers = {
       vertex: new VertexBuffer(c.vertex),
-      mesh: new MeshBuffer(c.mesh * 4),
+      mesh: new MeshBuffer(c.mesh),
       slab: new SlabBuffer(c.slab),
       light: new LightBuffer(0),
     };

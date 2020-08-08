@@ -314,7 +314,7 @@ export default class Renderer {
     this.gl.getBufferSubData(
       this.gl.SHADER_STORAGE_BUFFER,
       0,
-      this.stats.buffer.buffer
+      this.stats.buffer.f32
     );
 
     this.stats.reduce();

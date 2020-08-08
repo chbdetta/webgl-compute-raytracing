@@ -3,7 +3,7 @@ import { Face, PointFactory } from "../point";
 import RenderObject, { RenderCallback } from "./render";
 import Material from "../material";
 import { Slab } from "./bounding-box";
-import { Buffers, MeshBuffer } from "../buffer";
+import { Buffers, MeshBuffer, VertexBuffer, SlabBuffer } from "../buffer";
 
 /**
  * We make some assumptions to improve the performance
@@ -119,28 +119,6 @@ export default class Primitive extends RenderObject {
     this.commit();
 
     this.createBoundingBox();
-
-    const size = 4;
-    const data = (this.data = new Float32Array(
-      this.faces.length * Face.pointCount * size
-    ));
-
-    for (const [i, face] of this.faces.entries()) {
-      for (let j = 0; j < 3; j++) {
-        let ii = (i * Face.pointCount + j) * size;
-
-        const p = face.point(j);
-        // location
-        data[ii++] = p.location[0];
-        data[ii++] = p.location[1];
-        data[ii++] = p.location[2];
-        // padding
-        ii++;
-        // uv
-        // data[ii++] = p.uv[0];
-        // data[ii++] = p.uv[1];
-      }
-    }
   }
 
   bufferCount() {
@@ -148,8 +126,8 @@ export default class Primitive extends RenderObject {
     this.freeze();
 
     return {
-      vertex: this.data.length,
-      mesh: MeshBuffer.byteLength,
+      vertex: this.faces.length * Face.pointCount * VertexBuffer.bytes,
+      mesh: MeshBuffer.bytes,
       slab: this.bbox.reduce(
         (acc, slab) => (slab.bufferCount().slab ?? 0) + acc,
         0
@@ -160,9 +138,9 @@ export default class Primitive extends RenderObject {
   bufferAppend(buffer: Buffers) {
     buffer.mesh.append({
       faceCount: this.faces.length,
-      vertexOffset: buffer.vertex.cursor / 4,
+      vertexOffset: buffer.vertex.cursor / VertexBuffer.bytes,
       slabCount: this.bbox.length,
-      slabOffset: buffer.slab.cursor / 8,
+      slabOffset: buffer.slab.cursor / SlabBuffer.bytes,
       // we know BaseMaterial would be merged into here, so they are always available
       specularExponent: this.material.specularExponent!,
       specularColor: this.material.specular!,
@@ -170,7 +148,11 @@ export default class Primitive extends RenderObject {
       refractionColor: this.material.refraction!,
     });
 
-    buffer.vertex.append(this.data);
+    for (const face of this.faces) {
+      for (const p of face) {
+        buffer.vertex.append(p.location);
+      }
+    }
 
     for (const slab of this.bbox) {
       buffer.slab.append(slab);

@@ -41,7 +41,7 @@ class Stats {
   }
 
   reduce() {
-    const buffer = this.buffer.buffer;
+    const buffer = this.buffer.f32;
     const localSize = buffer.length / Stats.ItemSize;
 
     for (let i = 0; i < Stats.ItemSize; i++) {
@@ -57,7 +57,7 @@ class Stats {
   }
 
   reset() {
-    this.buffer.buffer.fill(0);
+    this.buffer.f32.fill(0);
     this.data.fill(0);
   }
 }

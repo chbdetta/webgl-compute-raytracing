@@ -1,9 +1,9 @@
-import { mat4, vec3 } from "gl-matrix";
+import { mat4, vec3, vec4 } from "gl-matrix";
 import { Face, PointFactory, UVFactory } from "../point";
 import Material from "../material";
 import RenderObject, { RenderCallback } from "./render";
 import Primitive from "./primitive";
-import { BuffersLength, Buffers, MeshBuffer } from "../buffer";
+import { BuffersLength, Buffers, MeshBuffer, VertexBuffer } from "../buffer";
 
 export { RenderCallback };
 
@@ -327,10 +327,11 @@ export class Sphere extends RenderObject {
   }
 
   bufferCount() {
+    this.freeze();
+
     return {
-      vertex: 8,
-      mesh: MeshBuffer.byteLength,
-      slab: 0,
+      vertex: 2 * VertexBuffer.bytes,
+      mesh: MeshBuffer.bytes,
     };
   }
 
@@ -338,15 +339,15 @@ export class Sphere extends RenderObject {
     buffers.mesh.append({
       // -1 face number denotes a parameterized object
       faceCount: -1,
-      vertexOffset: buffers.vertex.cursor / 4,
+      vertexOffset: buffers.vertex.cursor / VertexBuffer.bytes,
       specularExponent: this.material.specularExponent!,
       specularColor: this.material.specular!,
       diffuseColor: this.material.color!,
       refractionColor: this.material.refraction!,
     });
-    buffers.vertex.append(
-      new Float32Array([...this.origin, 0, ...this.normal, 0])
-    );
+
+    buffers.vertex.append(this.origin);
+    buffers.vertex.append(this.normal);
   }
 
   freeze() {
@@ -355,11 +356,10 @@ export class Sphere extends RenderObject {
 
   commit() {
     vec3.transformMat4(this.origin, this.origin, this.modelMatrix);
-    vec3.transformMat4(this.normal, this.normal, this.modelMatrix);
-    vec3.sub(this.normal, this.normal, this.origin);
 
-    mat4.invert(this.modelMatrix, this.modelMatrix);
-    mat4.transpose(this.modelMatrix, this.modelMatrix);
+    const normalv4 = [...this.normal, 0] as vec4;
+    vec4.transformMat4(normalv4, normalv4, this.modelMatrix);
+    vec3.copy(this.normal, normalv4.slice(0, 3) as vec3);
 
     mat4.identity(this.modelMatrix);
     return this;

@@ -1,7 +1,7 @@
 import { vec3, mat4 } from "gl-matrix";
 import BaseObject from "./base";
 import Primitive from "./primitive";
-import { BuffersLength, Buffers } from "../buffer";
+import { BuffersLength, Buffers, SlabBuffer } from "../buffer";
 
 export class Slab extends BaseObject {
   far: number;
@@ -29,7 +29,7 @@ export class Slab extends BaseObject {
 
   bufferCount(): BuffersLength {
     return {
-      slab: 8,
+      slab: 8 * SlabBuffer.bytes,
     };
   }
 }
