@@ -389,7 +389,7 @@ vec3 refract_dir(vec3 normal, vec3 dir, float ior) {
   return ior * dir + (ior * c1 - c2) * normal;
 }
 
-const int max_depth = 5;
+const int max_depth = 10;
 // get the color of a ray
 vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
   int depth = 1;

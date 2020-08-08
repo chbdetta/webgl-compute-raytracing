@@ -489,7 +489,7 @@ export const worlds = [
           new PointLight("ball", {
             intensity: 0.1,
             radius: 0.5,
-            color: new Color(1, 0.4, 0.4),
+            color: new Color(1, 0.2, 0.2),
             position: [1, 0.2, -3],
           })
         )
@@ -590,7 +590,7 @@ export const worlds = [
             .translate(0, 0, -12)
             .scale(10)
             .setColor(Color.BLACK)
-            .setSpecular(new Color(0.5, 0.8, 1))
+            .setSpecular(Color.WHITE)
             .setSpecularExponent(Material.MIRROR)
         );
     }
