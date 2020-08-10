@@ -392,7 +392,7 @@ vec3 refract_dir(vec3 normal, vec3 dir, float ior) {
 const int max_depth = 10;
 // get the color of a ray
 vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
-  int depth = 1;
+  int depth = 0;
   float at;
   int mesh_index;
   vec3 normal;
@@ -404,17 +404,17 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
   if (uGi) {
     effective_max_depth = max_depth;
   } else {
-    effective_max_depth = 3;
+    effective_max_depth = 2;
   }
 
-  while (depth < effective_max_depth && length(r.energy) > EPSILON) {
+  while (depth <= effective_max_depth && length(r.energy) > EPSILON) {
     if (hit_mesh(r, 0.01, MAX_FLOAT, at, mesh_index, normal, stats)) {
 
       Mesh mesh = meshes[mesh_index];
       vec3 surface_normal = normal;
       vec3 hit_point = hit_at(r, at);
       // the ray direction and normal are at the same side
-      bool same_side = dot(surface_normal, r.dir) < 0.0;
+      bool same_side = dot(surface_normal, r.dir) <= 0.0;
 
       // compute indirect lighting
 
@@ -486,7 +486,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
         //   float d = dot(dd, dd);
 
         //   if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
-        //     direct += r.energy * l.color * l.intensity / d * M_TWO_PI;
+        //     direct += r.energy * l.color * l.intensity / d * M_TWO_PI * max(0.0, dot(r.dir, sr.dir));
         //   }
         // }
 
@@ -504,24 +504,19 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
           direct += r.energy * l.color * l.intensity / d * M_TWO_PI * float(lights.length()) * max(0.0, dot(r.dir, sr.dir));
         }
       }
-
-      depth ++;
-
     } else {
       // hit nothing, we give an ambient light
       indirect += r.energy * uAmbient;
       r.energy = zero3;
     }
+    depth += 1;
   }
 
   float f_depth = float(depth);
 
   stats.rayCount += f_depth;
 
-  // FIXME: verify the reason we need to multiply 2.0 here.
-  // according to the furnance test, we got half the brightness if we don't multiply 2.0
-  // but what is wrong?
-  return (indirect * 2.0 + direct) / f_depth;
+  return (indirect + direct) / f_depth;
 }
 
 Ray create_camera_ray(vec2 uv) {
