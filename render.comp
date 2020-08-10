@@ -415,7 +415,6 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
       vec3 hit_point = hit_at(r, at);
       // the ray direction and normal are at the same side
       bool same_side = dot(surface_normal, r.dir) < 0.0;
-      // TODO: compute direct lighting
 
       // compute indirect lighting
 
@@ -435,22 +434,6 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
       //     depth -= 1;
       //   }
       // }
-
-      // direct shadow
-      for (int i = 0; i < lights.length(); i++) {
-        Light l = lights[i];
-        Ray sr;
-        sr.origin = hit_point + surface_normal * EPSILON;
-        vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), 1.0, seed, pixel) * l.radius;
-
-        vec3 dd = random_point - hit_point;
-        sr.dir = normalize(dd);
-        float d = dot(dd, dd);
-
-        if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
-          direct += r.energy * l.color * l.intensity * mesh.color / d * M_TWO_PI;
-        }
-      }
 
       float diffuse_factor = dot(mesh.color, oneThird3);
       float specular_factor = dot(mesh.specular, oneThird3);
@@ -506,6 +489,23 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
           r.energy *= (1.0 / refraction_factor) * mesh.refraction;
         }
       }
+
+      // direct lighting
+      for (int i = 0; i < lights.length(); i++) {
+        Light l = lights[i];
+        Ray sr;
+        sr.origin = hit_point + surface_normal * EPSILON;
+        vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), 1.0, seed, pixel) * l.radius;
+
+        vec3 dd = random_point - hit_point;
+        sr.dir = normalize(dd);
+        float d = dot(dd, dd);
+
+        if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
+          direct += r.energy * l.color * l.intensity / d * M_TWO_PI;
+        }
+      }
+
       depth ++;
 
     } else {
