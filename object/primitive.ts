@@ -17,14 +17,13 @@ export default class Primitive extends RenderObject {
   // The id of a texture
   faces: Readonly<Face[]>;
   rawPoints: PointFactory;
-  bbox: Slab[];
+  bbox: Slab[] = [];
 
   constructor(name: string, faces: Readonly<Face[]>, pf: PointFactory) {
     super(name);
 
     this.faces = faces;
     this.rawPoints = pf;
-    this.bbox = [];
   }
 
   invertNormal() {

@@ -156,27 +156,36 @@ class ThreeDFactory<T> {
     return !!this.itemMap.get(x)?.get(y)?.get(z);
   }
 
-  get(x: number, y: number, z: number) {
+  get(vec: vec3): T;
+  get(x: number, y: number, z: number): T;
+  get(x: number | vec3, y?: number, z?: number): T {
+    console.log(typeof vec3);
+    if (Array.isArray(x) || x instanceof Float32Array) {
+      y = x[1];
+      z = x[2];
+      x = x[0];
+    }
+
     let ymap = this.itemMap.get(x);
     if (!ymap) {
       ymap = new Map();
       this.itemMap.set(x, ymap);
     }
 
-    let zmap = ymap.get(y);
+    let zmap = ymap.get(y!);
 
     if (!zmap) {
       zmap = new Map();
-      ymap.set(y, zmap);
+      ymap.set(y!, zmap);
     }
 
-    const index = zmap.get(z);
+    const index = zmap.get(z!);
     let item;
 
     if (index == null) {
-      item = this.factory([x, y, z]);
+      item = this.factory([x, y!, z!]);
       this.items.push(item);
-      zmap.set(z, this.items.length - 1);
+      zmap.set(z!, this.items.length - 1);
     } else {
       item = this.items[index];
     }

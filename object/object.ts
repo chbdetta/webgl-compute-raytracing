@@ -310,66 +310,43 @@ export class Tetrahedron extends Primitive {
   }
 }
 
-export class Sphere extends RenderObject {
+function sphereCoord(r: number, theta: number, phi: number): vec3 {
+  return [
+    r * Math.cos(theta) * Math.cos(phi),
+    r * Math.cos(theta) * Math.sin(phi),
+    r * Math.sin(theta),
+  ];
+}
+
+export class Sphere extends Primitive {
   static count = 0;
-  origin: vec3;
-  normal: vec3;
+  constructor(name = `Sphere ${Sphere.count++}`, { segments = 6 } = {}) {
+    const faces: Face[] = [];
+    const r = 0.5;
 
-  constructor(name = `Sphere ${Sphere.count++}`) {
-    super(name);
+    const pf = new PointFactory();
 
-    this.origin = [0, 0, 0];
-    this.normal = [0, 0.5, 0];
-  }
+    let prevCol = [];
+    for (let j = 0; j <= segments; j++) {
+      const theta = j * (Math.PI / segments) - Math.PI / 2;
 
-  render() {
-    // pass
-  }
+      prevCol.push(pf.get(sphereCoord(r, theta, 0)));
+    }
 
-  bufferCount() {
-    this.freeze();
+    for (let i = 1; i <= segments * 2; i++) {
+      const phi = i * ((2 * Math.PI) / segments / 2);
+      let prev = pf.get(sphereCoord(r, -Math.PI / 2, phi));
+      for (let j = 1; j <= segments; j++) {
+        const theta = j * (Math.PI / segments) - Math.PI / 2;
+        const cur = pf.get(sphereCoord(r, theta, phi));
+        // prettier-ignore
+        faces.splice((i - 1) * (j - 1) * 2, 0, new Face(prevCol[j - 1], cur, prevCol[j]), new Face(prevCol[j - 1], prev, cur));
 
-    return {
-      vertex: 2 * VertexBuffer.bytes,
-      mesh: MeshBuffer.bytes,
-    };
-  }
+        prevCol[j - 1] = prev;
+        prev = cur;
+      }
+    }
 
-  bufferAppend(buffers: Buffers) {
-    buffers.mesh.append({
-      // -1 face number denotes a parameterized object
-      faceCount: -1,
-      vertexOffset: buffers.vertex.cursor / VertexBuffer.bytes,
-      specularExponent: this.material.specularExponent!,
-      specularColor: this.material.specular!,
-      diffuseColor: this.material.color!,
-      refractionColor: this.material.refraction!,
-    });
-
-    buffers.vertex.append(this.origin);
-    buffers.vertex.append(this.normal);
-  }
-
-  freeze() {
-    this.commit();
-  }
-
-  commit() {
-    vec3.transformMat4(this.origin, this.origin, this.modelMatrix);
-
-    const normalv4 = [...this.normal, 0] as vec4;
-    vec4.transformMat4(normalv4, normalv4, this.modelMatrix);
-    vec3.copy(this.normal, normalv4.slice(0, 3) as vec3);
-
-    mat4.identity(this.modelMatrix);
-    return this;
-  }
-
-  clone() {
-    const s = new Sphere();
-    s.origin = vec3.clone(this.origin);
-    s.normal = vec3.clone(this.normal);
-
-    return s;
+    super(name, faces, pf);
   }
 }
