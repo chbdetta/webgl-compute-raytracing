@@ -418,23 +418,6 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
 
       // compute indirect lighting
 
-      // the ray hit a light source, ignore it because it is calculated in the direct lighting
-
-      // if (mesh.emission != zero3) {
-      // // a light source only emit light on the normal direction
-      //   if (same_side) {
-      //   ret += r.energy * mesh.emission * mesh.intensity;
-      //   } else {
-      //     ret += zero3;
-      //   }
-
-      //   // r.energy = zero3;
-
-      //   if (depth == 1) {
-      //     depth -= 1;
-      //   }
-      // }
-
       float diffuse_factor = dot(mesh.color, oneThird3);
       float specular_factor = dot(mesh.specular, oneThird3);
 
@@ -478,6 +461,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
             k = r.ior / 1.0;
             r.ior = 1.0;
             surface_normal = -surface_normal;
+            r.energy *= (1.0 / refraction_factor) * mesh.refraction;
           } else {
             k = r.ior / mesh_ior;
             r.ior = mesh_ior;
@@ -486,40 +470,40 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
           // refraction
           r.origin = hit_point - EPSILON * surface_normal;
           r.dir = refract_dir(surface_normal, r.dir, k);
-          r.energy *= (1.0 / refraction_factor) * mesh.refraction;
         }
       }
 
-      // direct lighting
-      // for (int i = 0; i < lights.length(); i++) {
-      //   Light l = lights[i];
-      //   Ray sr;
-      //   sr.origin = hit_point + surface_normal * EPSILON;
-      //   vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), 1.0, seed, pixel) * l.radius;
+      if (same_side && diffuse_factor + specular_factor >= EPSILON) {
+        // direct lighting
+        // for (int i = 0; i < lights.length(); i++) {
+        //   Light l = lights[i];
+        //   Ray sr;
+        //   sr.origin = hit_point + surface_normal * EPSILON;
+        //   vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), 1.0, seed, pixel) * l.radius;
 
-      //   vec3 dd = random_point - hit_point;
-      //   sr.dir = normalize(dd);
-      //   float d = dot(dd, dd);
+        //   vec3 dd = random_point - hit_point;
+        //   sr.dir = normalize(dd);
+        //   float d = dot(dd, dd);
 
-      //   if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
-      //     direct += r.energy * l.color * l.intensity / d * M_TWO_PI;
-      //   }
-      // }
+        //   if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
+        //     direct += r.energy * l.color * l.intensity / d * M_TWO_PI;
+        //   }
+        // }
 
-      // Monte Carlo direct lighting
-      int index = int(float(lights.length()) * rand(seed, pixel));
-      Light l = lights[index];
-      Ray sr;
-      sr.origin = hit_point + surface_normal * EPSILON;
-      vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), 1.0, seed, pixel) * l.radius;
+        // Monte Carlo direct lighting
+        int index = int(float(lights.length()) * rand(seed, pixel));
+        Light l = lights[index];
+        Ray sr;
+        sr.origin = hit_point + surface_normal * EPSILON;
+        vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), 1.0, seed, pixel) * l.radius;
 
-      vec3 dd = random_point - hit_point;
-      sr.dir = normalize(dd);
-      float d = dot(dd, dd);
-      if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
-        direct += r.energy * l.color * l.intensity / d * M_TWO_PI * float(lights.length());
+        vec3 dd = random_point - hit_point;
+        sr.dir = normalize(dd);
+        float d = dot(dd, dd);
+        if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
+          direct += r.energy * l.color * l.intensity / d * M_TWO_PI * float(lights.length()) * max(0.0, dot(r.dir, sr.dir));
+        }
       }
-
 
       depth ++;
 
