@@ -490,12 +490,20 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
         //   }
         // }
 
+        float alpha;
+
+        if (specular_factor == 0.0) {
+          alpha = 1.0;
+        } else {
+          alpha = mesh.alpha;
+        }
+
         // Monte Carlo direct lighting
         int index = int(float(lights.length()) * rand(seed, pixel));
         Light l = lights[index];
         Ray sr;
         sr.origin = hit_point + surface_normal * EPSILON;
-        vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), 1.0, seed, pixel) * l.radius;
+        vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), alpha, seed, pixel) * l.radius;
 
         vec3 dd = random_point - hit_point;
         sr.dir = normalize(dd);
