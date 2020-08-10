@@ -491,20 +491,35 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
       }
 
       // direct lighting
-      for (int i = 0; i < lights.length(); i++) {
-        Light l = lights[i];
-        Ray sr;
-        sr.origin = hit_point + surface_normal * EPSILON;
-        vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), 1.0, seed, pixel) * l.radius;
+      // for (int i = 0; i < lights.length(); i++) {
+      //   Light l = lights[i];
+      //   Ray sr;
+      //   sr.origin = hit_point + surface_normal * EPSILON;
+      //   vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), 1.0, seed, pixel) * l.radius;
 
-        vec3 dd = random_point - hit_point;
-        sr.dir = normalize(dd);
-        float d = dot(dd, dd);
+      //   vec3 dd = random_point - hit_point;
+      //   sr.dir = normalize(dd);
+      //   float d = dot(dd, dd);
 
-        if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
-          direct += r.energy * l.color * l.intensity / d * M_TWO_PI;
-        }
+      //   if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
+      //     direct += r.energy * l.color * l.intensity / d * M_TWO_PI;
+      //   }
+      // }
+
+      // Monte Carlo direct lighting
+      int index = int(float(lights.length()) * rand(seed, pixel));
+      Light l = lights[index];
+      Ray sr;
+      sr.origin = hit_point + surface_normal * EPSILON;
+      vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), 1.0, seed, pixel) * l.radius;
+
+      vec3 dd = random_point - hit_point;
+      sr.dir = normalize(dd);
+      float d = dot(dd, dd);
+      if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
+        direct += r.energy * l.color * l.intensity / d * M_TWO_PI * float(lights.length());
       }
+
 
       depth ++;
 
