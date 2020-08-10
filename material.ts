@@ -30,6 +30,7 @@ export default class Material {
 
   setRefraction(refraction: Color) {
     this.refraction = refraction;
+    return this;
   }
 
   setSpecular(specular: Color | ((color: Color) => Color)) {
