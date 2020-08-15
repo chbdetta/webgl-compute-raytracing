@@ -126,7 +126,6 @@ struct Ray {
   vec3 origin;
   vec3 dir;
   vec3 energy;
-  float ior;
 };
 
 vec3 hit_at(Ray r, float t) {
@@ -378,6 +377,41 @@ bool hit_mesh(Ray r, float at_min, float at_max, inout float at, out int index, 
   return hit;
 }
 
+void hit_mesh_from_inside(Ray r, int index, inout float at, out vec3 normal, inout Stats stats) {
+  Mesh mesh = meshes[index];
+  int offset = mesh.offset;
+  float t;
+  vec3 n;
+
+  if (mesh.face_count == -1) {
+    vec3 a = vertices[offset];
+    vec3 b = vertices[offset + 1];
+
+    if (hit_sphere(r, a, length(b), t)) {
+      stats.rayIntersection += 1.0;
+      at = t;
+      normal = normalize(hit_at(r, t) - a);
+    }
+    stats.rayTest += 1.0;
+  } else if (hit_bbox(r, mesh, t, n)) {
+    stats.rayIntersection += 1.0;
+
+    for (int j = 0; j < mesh.face_count; ++j) {
+      vec3 a = vertices[j * 3 + offset];
+      vec3 b = vertices[j * 3 + offset + 1];
+      vec3 c = vertices[j * 3 + offset + 2];
+
+      if (hit_triangle_at(r, a, b, c, t)) {
+        stats.rayIntersection += 1.0;
+        at = t;
+        normal = normalize(cross(b - a, c - a));
+      }
+    }
+
+    stats.rayTest += float(mesh.face_count);
+  }
+}
+
 vec3 reflect_dir(vec3 normal, vec3 dir) {
   return normalize(2.0 * dot(normal, -dir) * normal + dir);
 }
@@ -386,10 +420,10 @@ vec3 refract_dir(vec3 normal, vec3 dir, float ior) {
   float c1 = dot(normal, dir);
   float c2 = sqrt(1.0 - ior * ior * (1.0 - c1 * c1));
 
-  return ior * dir + (ior * c1 - c2) * normal;
+  return normalize(ior * dir + (ior * c1 - c2) * normal);
 }
 
-const int max_depth = 10;
+const int max_depth = 2;
 // get the color of a ray
 vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
   int depth = 0;
@@ -404,7 +438,7 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
   if (uGi) {
     effective_max_depth = max_depth;
   } else {
-    effective_max_depth = 2;
+    effective_max_depth = 1;
   }
 
   while (depth <= effective_max_depth && length(r.energy) > EPSILON) {
@@ -413,21 +447,17 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
       Mesh mesh = meshes[mesh_index];
       vec3 surface_normal = normal;
       vec3 hit_point = hit_at(r, at);
-      // the ray direction and normal are at the same side
-      bool same_side = dot(surface_normal, r.dir) <= 0.0;
 
       // compute indirect lighting
 
       float diffuse_factor = dot(mesh.color, oneThird3);
       float specular_factor = dot(mesh.specular, oneThird3);
-
-      // no diffuse and reflection inside an object
-      if (!same_side) {
-        diffuse_factor = 0.0;
-        specular_factor = 0.0;
-      }
-
       float refraction_factor = dot(mesh.refraction, oneThird3);
+
+      // specular_factor = 0.0;
+      // diffuse_factor = 0.0;
+      // refraction_factor = 0.0;
+
       float sum = diffuse_factor + specular_factor + refraction_factor;
 
       if (sum <= EPSILON) {
@@ -446,34 +476,32 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
           r.origin = hit_point + EPSILON * surface_normal;
           r.dir = sample_hemisphere_uniform(reflect_dir(surface_normal, r.dir), mesh.alpha, seed, pixel);
           float f = (mesh.alpha + 2.0) / (mesh.alpha + 1.0);
-          r.energy *= (1.0 / specular_factor) * mesh.specular * max(0.0, dot(surface_normal, r.dir) * f);
+          r.energy *= (1.0 / specular_factor) * mesh.specular * max(0.0, dot(surface_normal, r.dir)) * f;
         } else if (chance < specular_factor + diffuse_factor) {
           // diffuse
           r.origin = hit_point + EPSILON * surface_normal;
           r.dir = sample_hemisphere_uniform(surface_normal, 1.0, seed, pixel);
           r.energy *= (1.0 / diffuse_factor) * mesh.color;
         } else {
-          float k;
-          // Add different ior
+          // Index of refraction of air is 1.0.
+          // IoR of glass is 1.5.
+          // reference https://pixelandpoly.com/ior.html
           float mesh_ior = 1.5;
-          // light direction is the same as the normal, exiting the object
-          if (!same_side) {
-            k = r.ior / 1.0;
-            r.ior = 1.0;
-            surface_normal = -surface_normal;
-            r.energy *= (1.0 / refraction_factor) * mesh.refraction;
-          } else {
-            k = r.ior / mesh_ior;
-            r.ior = mesh_ior;
+
+          if (dot(surface_normal, r.dir) < 0.0) {
+            r.origin = hit_point - EPSILON * surface_normal;
+            r.dir = refract_dir(surface_normal, r.dir, 1.0 / mesh_ior);
+
+            hit_mesh_from_inside(r, mesh_index, at, normal, stats);
           }
 
-          // refraction
-          r.origin = hit_point - EPSILON * surface_normal;
-          r.dir = refract_dir(surface_normal, r.dir, k);
+          r.origin = hit_at(r, at) + EPSILON * normal;
+          r.dir = refract_dir(-normal, r.dir, mesh_ior / 1.0);
+          r.energy *= (1.0 / refraction_factor) * mesh.refraction;
         }
       }
 
-      if (same_side && diffuse_factor + specular_factor >= EPSILON) {
+      if (diffuse_factor + specular_factor >= EPSILON) {
         // direct lighting
         // for (int i = 0; i < lights.length(); i++) {
         //   Light l = lights[i];
@@ -490,26 +518,22 @@ vec3 get_color(Ray r, inout float seed, vec2 pixel, inout Stats stats) {
         //   }
         // }
 
-        float alpha;
-
-        if (specular_factor == 0.0) {
-          alpha = 1.0;
-        } else {
-          alpha = mesh.alpha;
-        }
-
         // Monte Carlo direct lighting
         int index = int(float(lights.length()) * rand(seed, pixel));
         Light l = lights[index];
         Ray sr;
         sr.origin = hit_point + surface_normal * EPSILON;
-        vec3 random_point = l.position + sample_hemisphere_uniform(normalize(hit_point - l.position), alpha, seed, pixel) * l.radius;
+        vec3 light_dir = normalize(hit_point - l.position);
+
+        vec3 sampling = sample_hemisphere_uniform(light_dir, 1.0, seed, pixel);
+        vec3 random_point = l.position + sampling * l.radius;
+        float pdf = dot(sampling, light_dir) / M_PI;
 
         vec3 dd = random_point - hit_point;
         sr.dir = normalize(dd);
         float d = dot(dd, dd);
         if (!hit_mesh(sr, 0.01, sqrt(d), at, mesh_index, normal, stats)) {
-          direct += r.energy * l.color * l.intensity / d * M_TWO_PI * float(lights.length()) * max(0.0, dot(r.dir, sr.dir));
+          direct += r.energy * l.color * l.intensity / d * float(lights.length()) / pdf * max(0.0, dot(r.dir, sr.dir));
         }
       }
     } else {
@@ -537,9 +561,6 @@ Ray create_camera_ray(vec2 uv) {
   r.origin = origin;
   r.dir = dir;
   r.energy = vec3(1.0);
-  // Index of refraction of air.
-  // reference https://pixelandpoly.com/ior.html
-  r.ior = 1.0;
   return r;
 }
 
