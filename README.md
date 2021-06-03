@@ -1,3 +1,8 @@
+# Deprecated
+[WebGL 2.0 Compute Shader](https://www.khronos.org/registry/webgl/specs/latest/2.0-compute/) is deprecated in favor of the [WebGPU Proposal](https://gpuweb.github.io/gpuweb/) and as a result. The demo no longer works
+
+Will move to WebGPU implementation once the proposal is stable.
+
 # WebGL 2.0 Compute Ray-tracing - [Demo](https://people.ucsc.edu/~hchen222/cse160-hw5/)
 
 ![demo](example/demo.gif)
