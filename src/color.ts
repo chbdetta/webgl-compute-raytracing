@@ -1,4 +1,4 @@
-import { vec3, mat4 } from "gl-matrix";
+import { vec3 } from "gl-matrix";
 
 export default class Color {
   static RED = new Color(1, 0, 0);
@@ -9,55 +9,55 @@ export default class Color {
   static GRAY = new Color(0.8, 0.8, 0.8);
 
   data: vec3;
-  alpha: number = 1;
+  alpha = 1;
 
   constructor(r?: number, g?: number, b?: number, a?: number) {
     this.data = [r || 0, g || 0, b || 0];
     this.alpha = a == null ? 1 : a;
   }
 
-  get r() {
+  get r(): number {
     return this.data[0];
   }
-  get 0() {
+  get 0(): number {
     return this.data[0];
   }
-  get g() {
+  get g(): number {
     return this.data[1];
   }
-  get 1() {
+  get 1(): number {
     return this.data[1];
   }
-  get b() {
+  get b(): number {
     return this.data[2];
   }
-  get 2() {
+  get 2(): number {
     return this.data[2];
   }
-  get a() {
+  get a(): number {
     return this.alpha;
   }
-  get 3() {
+  get 3(): number {
     return this.alpha;
   }
 
-  setR(r: number) {
+  setR(r: number): Color {
     return new Color(r, this.g, this.b, this.a);
   }
 
-  setG(g: number) {
+  setG(g: number): Color {
     return new Color(this.r, g, this.b, this.a);
   }
 
-  setB(b: number) {
+  setB(b: number): Color {
     return new Color(this.r, this.g, b, this.a);
   }
 
-  setA(a: number) {
+  setA(a: number): Color {
     return new Color(this.r, this.g, this.b, a);
   }
 
-  mul(c: number) {
+  mul(c: number): Color {
     const color = new Color();
     color.data = vec3.scale(vec3.clone(this.data), this.data, c);
     color.alpha = this.alpha;

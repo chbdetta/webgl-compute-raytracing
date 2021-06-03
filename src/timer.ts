@@ -1,5 +1,10 @@
 const id = (x: number) => x;
 
+interface Time {
+  now: number;
+  delta: number;
+}
+
 export default class Timer {
   static timers: Map<number, Timer> = new Map();
   static count = 0;
@@ -9,11 +14,11 @@ export default class Timer {
   #prevTime: number;
   #speed: number;
 
-  #enabled: boolean = false;
+  #enabled = false;
 
   #prevRealTime: number;
 
-  constructor(speed: number = 0.001) {
+  constructor(speed = 0.001) {
     this.#id = Timer.count++;
     this.#time = this.#prevTime = 0;
 
@@ -25,7 +30,7 @@ export default class Timer {
     Timer.timers.set(this.#id, this);
   }
 
-  checkTime(modifier = id) {
+  checkTime(modifier = id): Time {
     const ret = {
       now: modifier(this.#time),
       delta: modifier(this.#time) - modifier(this.#prevTime),
@@ -36,7 +41,7 @@ export default class Timer {
     return ret;
   }
 
-  tick() {
+  tick(): void {
     if (this.#enabled) {
       const now = performance.now();
       const delta = now - this.#prevRealTime;
@@ -48,11 +53,11 @@ export default class Timer {
     }
   }
 
-  stop() {
+  stop(): void {
     this.#enabled = false;
   }
 
-  start() {
+  start(): void {
     this.#enabled = true;
     this.#prevRealTime = performance.now();
     this.tick();

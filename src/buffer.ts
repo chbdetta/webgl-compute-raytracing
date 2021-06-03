@@ -11,6 +11,12 @@ export interface ToBuffer {
   bufferAppend(buffer: Buffers): void;
 }
 
+export type BufferDescriptor = {
+  name: string;
+  length: number;
+  buffer: WebGLBuffer;
+};
+
 export interface BuffersLength {
   mesh?: number;
   vertex?: number;
@@ -25,12 +31,7 @@ export interface Buffers {
   light: LightBuffer;
 }
 
-export interface Buffer {
-  buffer: ArrayBuffer;
-  append(obj: any): void;
-}
-
-export class Buffer implements Buffer {
+export class Buffer {
   cursor = 0;
   buffer: ArrayBuffer;
   bindingPoint: number;
@@ -45,7 +46,7 @@ export class Buffer implements Buffer {
     this.bindingPoint = bindingPoint;
   }
 
-  createWebGLBuffer(gl: WebGL2Context, name: string) {
+  createWebGLBuffer(gl: WebGL2Context, name: string): BufferDescriptor {
     const id = gl.createBuffer();
 
     gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, id);
@@ -59,13 +60,13 @@ export class Buffer implements Buffer {
     };
   }
 
-  appendF(n: number) {
+  appendF(n: number): void {
     this.f32[this.cursor++] = n;
   }
-  appendI(n: number) {
+  appendI(n: number): void {
     this.i32[this.cursor++] = n;
   }
-  pad(n: number) {
+  pad(n: number): void {
     this.cursor += n;
   }
 }
@@ -77,7 +78,7 @@ export class VertexBuffer extends Buffer {
     super(1, length);
   }
 
-  append(v: vec3) {
+  append(v: vec3): void {
     // copy vertices data to the buffer
     this.appendF(v[0]);
     this.appendF(v[1]);
@@ -103,7 +104,7 @@ export class MeshBuffer extends Buffer {
     diffuseColor: Color;
     specularColor: Color;
     refractionColor: Color;
-  }) {
+  }): void {
     // TODO: define the structure here and generate the glsl struct string
     const intBuffer = new Int32Array(this.buffer);
     const floatBuffer = new Float32Array(this.buffer);
@@ -152,7 +153,7 @@ export class SlabBuffer extends Buffer {
     super(3, length);
   }
 
-  append(slab: Slab) {
+  append(slab: Slab): void {
     this.appendF(slab.normal[0]);
     this.appendF(slab.normal[1]);
     this.appendF(slab.normal[2]);
@@ -174,7 +175,7 @@ export class LightBuffer extends Buffer {
     color: Color;
     intensity: number;
     radius: number;
-  }) {
+  }): void {
     this.appendF(lightData.position[0]);
     this.appendF(lightData.position[1]);
     this.appendF(lightData.position[2]);

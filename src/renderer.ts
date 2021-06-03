@@ -1,21 +1,13 @@
-// reference https://github.com/oktomus/web-experiments/blob/1e2d3bfbe6/webgl-compute/toy-raytracer/js/renderer.js
-
 import computeShader from "shader/render.comp";
 import blitShader from "shader/blit.comp";
 import World from "world";
 import Stats from "./stats";
 import Camera from "./camera";
-import { Buffers, Buffer } from "./buffer";
+import { Buffers, Buffer, BufferDescriptor } from "./buffer";
 
 // 2D local invocation
 const LOCAL_X = 16;
 const LOCAL_Y = 16;
-
-type BufferDescriptor = {
-  name: string;
-  length: number;
-  buffer: WebGLBuffer;
-};
 
 type BufferDescriptors = {
   vertex: BufferDescriptor | null;
@@ -26,7 +18,7 @@ type BufferDescriptors = {
 };
 
 export default class Renderer {
-  renderTimes: number = 0;
+  renderTimes = 0;
 
   stats: Stats;
 
@@ -53,7 +45,7 @@ export default class Renderer {
   #world: World;
   #moving = 0;
 
-  get world() {
+  get world(): World {
     return this.#world;
   }
 
@@ -76,26 +68,28 @@ export default class Renderer {
   }
 
   #width: number;
-  get width() {
+  get width(): number {
     return this.#width;
   }
-  set width(w) {
+  set width(w: number) {
     this.#width = Math.ceil(w / LOCAL_X) * LOCAL_X;
     this.canvas.width = this.#width;
   }
 
   #height: number;
-  get height() {
+  get height(): number {
     return this.#height;
   }
-  set height(h) {
+  set height(h: number) {
     this.#height = Math.ceil(h / LOCAL_Y) * LOCAL_Y;
     this.canvas.height = this.#height;
   }
 
   constructor(canvas: HTMLCanvasElement, width: number, height: number) {
     this.canvas = canvas;
-    this.gl = canvas.getContext("webgl2-compute", { antialias: false }) as any;
+    this.gl = canvas.getContext("webgl2-compute", {
+      antialias: false,
+    }) as unknown as WebGL2Context;
 
     if (!this.gl) {
       throw new Error("can not get webgl2 compute context");
@@ -111,12 +105,15 @@ export default class Renderer {
     [this.renderProgram, this.blitProgram] = this.init({
       computeShader,
       blitShader,
-    }) as any;
+    });
     this.gl.useProgram(this.renderProgram);
     this.gl.program = this.renderProgram;
   }
 
-  init(options: { computeShader: string; blitShader: string }) {
+  init(options: {
+    computeShader: string;
+    blitShader: string;
+  }): [WebGLProgram, WebGLProgram] {
     const gl = this.gl;
 
     const program = gl.createProgram();
@@ -126,16 +123,17 @@ export default class Renderer {
     }
 
     const computeShader = gl.createShader(gl.COMPUTE_SHADER);
-    if (!computeShader) return;
+    if (!computeShader) {
+      throw new Error("fails to create computer shader");
+    }
 
     // compile the shader
     gl.shaderSource(computeShader, options.computeShader);
     gl.compileShader(computeShader);
 
     if (!gl.getShaderParameter(computeShader, gl.COMPILE_STATUS)) {
-      console.error(`compiling ${name} shader fails`);
       console.log(gl.getShaderInfoLog(computeShader));
-      return;
+      throw new Error(`compiling compute shader fails`);
     }
 
     // attach the shader
@@ -155,16 +153,17 @@ export default class Renderer {
     }
 
     const blitShader = gl.createShader(gl.COMPUTE_SHADER);
-    if (!blitShader) return;
+    if (!blitShader) {
+      throw new Error("fails to create the blit shader");
+    }
 
     // compile the shader
     gl.shaderSource(blitShader, options.blitShader);
     gl.compileShader(blitShader);
 
     if (!gl.getShaderParameter(blitShader, gl.COMPILE_STATUS)) {
-      console.error(`compiling ${name} shader fails`);
-      console.log(gl.getShaderInfoLog(blitShader));
-      return;
+      console.error(gl.getShaderInfoLog(blitShader));
+      throw new Error(`compiling blit shader fails`);
     }
 
     // attach the shader
@@ -236,7 +235,7 @@ export default class Renderer {
     return [program, blitProgram];
   }
 
-  onCameraChange() {
+  onCameraChange(): void {
     this.renderTimes = 0;
 
     if (this.#moving) {
@@ -251,24 +250,27 @@ export default class Renderer {
     this.completed = false;
   }
 
-  sendBuffer(name: keyof BufferDescriptors, buffer: Buffer) {
+  sendBuffer(name: keyof BufferDescriptors, buffer: Buffer): void {
     const { gl } = this;
-    this.buffers[name] = buffer.createWebGLBuffer(gl, name);
+    const glBuffer = buffer.createWebGLBuffer(gl, name);
+
     gl.bufferData(gl.SHADER_STORAGE_BUFFER, buffer.buffer, gl.STATIC_COPY);
-    this.buffers[name]!.length = buffer.buffer.byteLength / 4;
+
+    if (glBuffer) {
+      glBuffer.length = buffer.buffer.byteLength / 4;
+    }
+
+    this.buffers[name] = glBuffer;
 
     console.log(name, buffer);
   }
 
-  sendStatsBuffer() {
+  sendStatsBuffer(): void {
     this.sendBuffer("stats", this.stats.buffer);
   }
 
-  sendWorldBuffer() {
+  sendWorldBuffer(): void {
     if (!this.#world) return;
-
-    // create and bind buffers
-    const { gl } = this;
 
     for (const [name, buffer] of Object.entries(this.#world.buffers) as [
       keyof Buffers,
@@ -278,10 +280,8 @@ export default class Renderer {
     }
   }
 
-  render() {
+  render(): void {
     if (!this.#world || this.completed) return;
-
-    const gl = this.gl;
 
     this.gl.useProgram(this.renderProgram);
 

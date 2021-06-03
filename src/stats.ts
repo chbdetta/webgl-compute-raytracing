@@ -16,31 +16,31 @@ class Stats {
     this.data = new Array(4).fill(0);
   }
 
-  get diff() {
+  get diff(): number {
     return this.data[0];
   }
 
-  get mainRay() {
+  get mainRay(): number {
     return this.data[1];
   }
 
-  get rayCount() {
+  get rayCount(): number {
     return this.data[2];
   }
 
-  get rayTest() {
+  get rayTest(): number {
     return this.data[3];
   }
 
-  get rayIntersection() {
+  get rayIntersection(): number {
     return this.data[4];
   }
 
-  get fps() {
+  get fps(): number {
     return 1000 / this.delta;
   }
 
-  reduce() {
+  reduce(): void {
     const buffer = this.buffer.f32;
     const localSize = buffer.length / Stats.ItemSize;
 
@@ -56,7 +56,7 @@ class Stats {
     }
   }
 
-  reset() {
+  reset(): void {
     this.buffer.f32.fill(0);
     this.data.fill(0);
   }

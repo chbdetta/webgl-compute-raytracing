@@ -18,22 +18,22 @@ export default class Material {
     }
   }
 
-  setColor(color: Color) {
+  setColor(color: Color): this {
     this.color = color;
     return this;
   }
 
-  setTexture(textureId: number) {
+  setTexture(textureId: number): this {
     this.texture = textureId;
     return this;
   }
 
-  setRefraction(refraction: Color) {
+  setRefraction(refraction: Color): this {
     this.refraction = refraction;
     return this;
   }
 
-  setSpecular(specular: Color | ((color: Color) => Color)) {
+  setSpecular(specular: Color | ((color: Color) => Color)): this {
     if (specular instanceof Color) {
       this._specular = specular;
     } else {
@@ -42,7 +42,7 @@ export default class Material {
     return this;
   }
 
-  setSpecularExponent(e: number) {
+  setSpecularExponent(e: number): this {
     if (e <= 0) {
       throw new Error("Specular Exponent must be larger than 0");
     }
@@ -50,7 +50,7 @@ export default class Material {
     return this;
   }
 
-  merge(mat?: Material) {
+  merge(mat?: this): this {
     if (mat) {
       return Object.assign(new Material(), mat, this);
     } else {

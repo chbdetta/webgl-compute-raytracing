@@ -16,29 +16,29 @@ export default abstract class BaseObject implements ToBuffer {
     this.name = name;
   }
 
-  setName(name: string) {
+  setName(name: string): this {
     this.name = name;
     return this;
   }
 
-  animate(fn: (time: number, object: BaseObject) => void) {
+  animate(fn: (time: number, object: BaseObject) => void): this {
     this.animateMatrix = fn;
     return this;
   }
 
-  setRotate(angle: number, x: number, y: number, z: number) {
+  setRotate(angle: number, x: number, y: number, z: number): this {
     mat4.identity(this.modelMatrix);
     mat4.rotate(this.modelMatrix, this.modelMatrix, toRad(angle), [x, y, z]);
     return this;
   }
 
-  setTranslate(x: number, y: number, z: number) {
+  setTranslate(x: number, y: number, z: number): this {
     mat4.identity(this.modelMatrix);
     mat4.translate(this.modelMatrix, this.modelMatrix, [x, y, z]);
     return this;
   }
 
-  setScale(x: number, y?: number, z?: number) {
+  setScale(x: number, y?: number, z?: number): this {
     if (y == null || z == null) {
       y = z = x;
     }
@@ -49,17 +49,17 @@ export default abstract class BaseObject implements ToBuffer {
     return this;
   }
 
-  rotate(angle: number, x: number, y: number, z: number) {
+  rotate(angle: number, x: number, y: number, z: number): this {
     mat4.rotate(this.modelMatrix, this.modelMatrix, toRad(angle), [x, y, z]);
     return this;
   }
 
-  translate(x: number, y: number, z: number) {
+  translate(x: number, y: number, z: number): this {
     mat4.translate(this.modelMatrix, this.modelMatrix, [x, y, z]);
     return this;
   }
 
-  scale(x: number, y?: number, z?: number) {
+  scale(x: number, y?: number, z?: number): this {
     if (y == null || z == null) {
       y = z = x;
     }

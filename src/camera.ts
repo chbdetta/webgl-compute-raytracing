@@ -85,7 +85,7 @@ export default class Camera extends EventEmitter {
     this.update();
   }
 
-  update() {
+  update(): void {
     mat4.lookAt(this.invertView, this.eye, this.at, this.up);
     mat4.invert(this.invertView, this.invertView);
 
@@ -110,11 +110,11 @@ export default class Camera extends EventEmitter {
     };
   }
 
-  reset() {
+  reset(): void {
     this.parse(this.initialConfig);
   }
 
-  parse(data: CameraJSON) {
+  parse(data: CameraJSON): void {
     this.eye = vec3.clone(data.eye);
     this.at = vec3.clone(data.at);
     this.up = vec3.clone(data.up);
@@ -123,27 +123,27 @@ export default class Camera extends EventEmitter {
     this.update();
   }
 
-  setRatio(ratio: number) {
+  setRatio(ratio: number): void {
     this.ratio = ratio;
     this.update();
   }
 
-  setEye(eye: vec3) {
+  setEye(eye: vec3): void {
     this.eye = eye;
     this.update();
   }
 
-  setAt(at: vec3) {
+  setAt(at: vec3): void {
     this.at = at;
     this.update();
   }
 
-  setInvertProjection(matrix: mat4) {
+  setInvertProjection(matrix: mat4): void {
     this.invertPerspective = matrix;
     this.update();
   }
 
-  walkForward() {
+  walkForward(): void {
     const step: vec3 = [this.dir[0], 0, this.dir[2]];
     vec3.scale(step, step, this.speed);
 
@@ -153,7 +153,7 @@ export default class Camera extends EventEmitter {
     this.update();
   }
 
-  walkBackward() {
+  walkBackward(): void {
     const step: vec3 = [this.dir[0], 0, this.dir[2]];
     vec3.scale(step, step, -this.speed);
 
@@ -167,38 +167,38 @@ export default class Camera extends EventEmitter {
 
   walkLeft = this.left;
 
-  forward() {
+  forward(): void {
     const dir = this.dir;
     const step = vec3.scale(dir, dir, this.speed);
     this.move(step);
   }
 
-  backward() {
+  backward(): void {
     const dir = this.dir;
     const step = vec3.scale(dir, dir, -this.speed);
     this.move(step);
   }
 
-  left() {
+  left(): void {
     const side = this.side;
     const step = vec3.scale(side, side, -this.speed);
     this.move(step);
   }
 
-  right() {
+  right(): void {
     const side = this.side;
     const step = vec3.scale(side, side, this.speed);
     this.move(step);
   }
 
-  move(step: vec3) {
+  move(step: vec3): void {
     vec3.add(this.eye, this.eye, step);
     vec3.add(this.at, this.at, step);
 
     this.update();
   }
 
-  pan(x: number, y: number) {
+  pan(x: number, y: number): void {
     mat4.identity(this.#panMatrix);
     mat4.rotate(
       this.#panMatrix,

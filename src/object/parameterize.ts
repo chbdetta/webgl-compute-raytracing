@@ -1,5 +1,5 @@
 import RenderObject from "./render";
-import { VertexBuffer, MeshBuffer, Buffers } from "../buffer";
+import { VertexBuffer, MeshBuffer, Buffers, BuffersLength } from "../buffer";
 import { vec3, vec4, mat4 } from "gl-matrix";
 
 export class ParamSphere extends RenderObject {
@@ -14,11 +14,11 @@ export class ParamSphere extends RenderObject {
     this.normal = [0, 0.5, 0];
   }
 
-  render() {
+  render(): void {
     // pass
   }
 
-  bufferCount() {
+  bufferCount(): BuffersLength {
     this.freeze();
 
     return {
@@ -27,7 +27,7 @@ export class ParamSphere extends RenderObject {
     };
   }
 
-  bufferAppend(buffers: Buffers) {
+  bufferAppend(buffers: Buffers): void {
     buffers.mesh.append({
       // -1 face number denotes a parameterized object
       faceCount: -1,
@@ -42,11 +42,11 @@ export class ParamSphere extends RenderObject {
     buffers.vertex.append(this.normal);
   }
 
-  freeze() {
+  freeze(): void {
     this.commit();
   }
 
-  commit() {
+  commit(): this {
     vec3.transformMat4(this.origin, this.origin, this.modelMatrix);
 
     const normalv4 = [...this.normal, 0] as vec4;
@@ -57,7 +57,7 @@ export class ParamSphere extends RenderObject {
     return this;
   }
 
-  clone() {
+  clone(): ParamSphere {
     const s = new ParamSphere();
     s.origin = vec3.clone(this.origin);
     s.normal = vec3.clone(this.normal);

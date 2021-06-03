@@ -2,7 +2,7 @@ import { mat4 } from "gl-matrix";
 import Material from "../material";
 import BaseObject from "./base";
 import Color from "../color";
-import { ToBuffer, BuffersLength, Buffers } from "../buffer";
+import { BuffersLength, Buffers } from "../buffer";
 
 export type RenderCallback = (
   vertices: Float32Array,
@@ -22,32 +22,32 @@ export default abstract class RenderObject extends BaseObject {
     this.material = new Material();
   }
 
-  setColor(color: Color) {
+  setColor(color: Color): this {
     this.material.setColor(color);
     return this;
   }
 
-  setTexture(texture: number) {
+  setTexture(texture: number): this {
     this.material.setTexture(texture);
     return this;
   }
 
-  setSpecular(specular: Color) {
+  setSpecular(specular: Color): this {
     this.material.setSpecular(specular);
     return this;
   }
 
-  setSpecularExponent(exp: number) {
+  setSpecularExponent(exp: number): this {
     this.material.setSpecularExponent(exp);
     return this;
   }
 
-  setRefraction(refraction: Color) {
+  setRefraction(refraction: Color): this {
     this.material.setRefraction(refraction);
     return this;
   }
 
-  setMaterial(material: Material) {
+  setMaterial(material: Material): this {
     this.material = material;
     return this;
   }
@@ -64,7 +64,7 @@ export default abstract class RenderObject extends BaseObject {
     time: number
   ): void;
 
-  mergeMaterial(material: Material) {
+  mergeMaterial(material: Material): void {
     material = this.material.merge(material);
 
     if (
@@ -88,8 +88,8 @@ export default abstract class RenderObject extends BaseObject {
    */
   abstract freeze(): void;
 
-  child(name: string): RenderObject {
-    return void 0 as any;
+  child(name: string): RenderObject | undefined {
+    return undefined;
   }
 
   abstract clone(preserveModelMatrix: boolean): RenderObject;

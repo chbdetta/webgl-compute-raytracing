@@ -3,7 +3,13 @@ import { Face, PointFactory } from "../../point";
 import RenderObject, { RenderCallback } from "./render";
 import Material from "../material";
 import { Slab } from "./bounding-box";
-import { Buffers, MeshBuffer, VertexBuffer, SlabBuffer } from "../buffer";
+import {
+  Buffers,
+  MeshBuffer,
+  VertexBuffer,
+  SlabBuffer,
+  BuffersLength,
+} from "../buffer";
 
 /**
  * We make some assumptions to improve the performance
@@ -26,16 +32,16 @@ export default class Primitive extends RenderObject {
     this.rawPoints = pf;
   }
 
-  invertNormal() {
+  invertNormal(): this {
     const mat = mat4.create();
     mat4.scale(mat, mat, [-1, -1, -1]);
 
     if (this.rawPoints && this.faces) {
-      for (let point of this.rawPoints) {
+      for (const point of this.rawPoints) {
         point.transformNormal(mat);
       }
 
-      for (let face of this.faces) {
+      for (const face of this.faces) {
         face.transformNormal(mat);
       }
     } else {
@@ -45,7 +51,7 @@ export default class Primitive extends RenderObject {
     return this;
   }
 
-  clone(preserveModelMatrix = false) {
+  clone(preserveModelMatrix = false): Primitive {
     if (!this.faces) {
       console.warn("Modifying the object after freezing");
       return this;
@@ -71,20 +77,20 @@ export default class Primitive extends RenderObject {
   /**
    * Transform the object from the object space into the world space.
    */
-  commit() {
+  commit(): this {
     if (!this.faces || !this.rawPoints) {
       console.warn("Modifying the object after freezing");
       return this;
     }
 
-    for (let point of this.rawPoints) {
+    for (const point of this.rawPoints) {
       point.transform(this.modelMatrix);
     }
 
     mat4.invert(this.modelMatrix, this.modelMatrix);
     mat4.transpose(this.modelMatrix, this.modelMatrix);
 
-    for (let face of this.faces) {
+    for (const face of this.faces) {
       face.transformNormal(this.modelMatrix);
     }
 
@@ -92,7 +98,7 @@ export default class Primitive extends RenderObject {
     return this;
   }
 
-  createBoundingBox() {
+  createBoundingBox(): void {
     const v = Math.sqrt(3) / 3;
 
     const normals: vec3[] = [
@@ -108,7 +114,7 @@ export default class Primitive extends RenderObject {
     this.bbox = normals.map((n) => new Slab(this, n));
   }
 
-  freeze() {
+  freeze(): void {
     if (!this.faces || !this.rawPoints) {
       console.warn("Modifying the object after freezing");
       return;
@@ -120,7 +126,7 @@ export default class Primitive extends RenderObject {
     this.createBoundingBox();
   }
 
-  bufferCount() {
+  bufferCount(): BuffersLength {
     // we need to freeze before getting the buffer length
     this.freeze();
 
@@ -134,7 +140,7 @@ export default class Primitive extends RenderObject {
     };
   }
 
-  bufferAppend(buffer: Buffers) {
+  bufferAppend(buffer: Buffers): void {
     buffer.mesh.append({
       faceCount: this.faces.length,
       vertexOffset: buffer.vertex.cursor / VertexBuffer.bytes,
@@ -170,8 +176,8 @@ export default class Primitive extends RenderObject {
     material: Material,
     matrix: mat4 | number,
     time?: number
-  ) {
-    let modelMatrix: mat4 | undefined = matrix as any;
+  ): void {
+    let modelMatrix: mat4 | undefined = matrix as unknown as mat4;
 
     if (arguments.length === 3) {
       time = matrix as number;

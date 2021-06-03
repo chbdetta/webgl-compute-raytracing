@@ -77,7 +77,7 @@ export default class World {
     });
   }
 
-  init() {
+  init(): void {
     if (this.#state === State.Created) {
       this.#initializer.call(this, this);
       this.freeze();
@@ -86,14 +86,14 @@ export default class World {
     }
   }
 
-  freeze() {
+  freeze(): this {
     const c = {
       vertex: 0,
       mesh: 0,
       slab: 0,
       light: 0,
     };
-    for (let [, o] of this.objects) {
+    for (const [, o] of this.objects) {
       if (o instanceof RenderObject) {
         o.mergeMaterial(this.baseMaterial);
       }
@@ -121,7 +121,7 @@ export default class World {
     return this;
   }
 
-  add(obj: BaseObject) {
+  add(obj: BaseObject): this {
     this.objects.set(obj.name, obj);
     return this;
   }
@@ -425,36 +425,36 @@ function buildATAT() {
 
   thighFrontRight
     .child("leg")
-    .animate((t, m) => m.rotate(30 * t, 1, 0, 0))
+    ?.animate((t, m) => m.rotate(30 * t, 1, 0, 0))
     .child("lowerLeg")
-    .animate((t, m) => m.rotate(-35 * t, 1, 0, 0))
+    ?.animate((t, m) => m.rotate(-35 * t, 1, 0, 0))
     .child("foot")
-    .animate((t, m) => m.rotate(-15 * t, 1, 0, 0));
+    ?.animate((t, m) => m.rotate(-15 * t, 1, 0, 0));
 
   thighBackLeft
     .child("leg")
-    .animate((t, m) => {
+    ?.animate((t, m) => {
       return m.rotate(10 * t, 1, 0, 0);
     })
     .child("lowerLeg")
-    .animate((t, m) => {
+    ?.animate((t, m) => {
       return m.rotate(-25 * t, 1, 0, 0);
     })
     .child("foot")
-    .animate((t, m) => {
+    ?.animate((t, m) => {
       return m.rotate(15 * t, 1, 0, 0);
     });
 
   thighBackRight
     .child("leg")
-    .animate((t, m) => m.rotate(8 * t, 1, 0, 0))
+    ?.animate((t, m) => m.rotate(8 * t, 1, 0, 0))
     .child("lowerLeg")
-    .animate((t, m) => m.rotate(-8 * t, 1, 0, 0));
+    ?.animate((t, m) => m.rotate(-8 * t, 1, 0, 0));
   thighFrontLeft
     .child("leg")
-    .animate((t, m) => m.rotate(-8 * t, 1, 0, 0))
+    ?.animate((t, m) => m.rotate(-8 * t, 1, 0, 0))
     .child("lowerLeg")
-    .animate((t, m) => m.rotate(8 * t, 1, 0, 0));
+    ?.animate((t, m) => m.rotate(8 * t, 1, 0, 0));
 
   const lower = new Group()
     .addChild(thighFrontLeft)

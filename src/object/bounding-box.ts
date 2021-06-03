@@ -1,4 +1,4 @@
-import { vec3, mat4 } from "gl-matrix";
+import { vec3 } from "gl-matrix";
 import BaseObject from "./base";
 import Primitive from "./primitive";
 import { BuffersLength, Buffers, SlabBuffer } from "../buffer";
@@ -23,7 +23,7 @@ export class Slab extends BaseObject {
     }
   }
 
-  bufferAppend(buffers: Buffers) {
+  bufferAppend(buffers: Buffers): void {
     buffers.slab.append(this);
   }
 

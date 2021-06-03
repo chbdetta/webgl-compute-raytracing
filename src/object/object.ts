@@ -1,9 +1,9 @@
-import { mat4, vec3, vec4 } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 import { Face, PointFactory, UVFactory } from "../../point";
 import Material from "../material";
 import RenderObject, { RenderCallback } from "./render";
 import Primitive from "./primitive";
-import { BuffersLength, Buffers, MeshBuffer, VertexBuffer } from "../buffer";
+import { BuffersLength, Buffers } from "../buffer";
 
 export { RenderCallback };
 
@@ -13,21 +13,20 @@ export class Group extends RenderObject {
 
   static count = 0;
 
-  constructor(name: string = `Group ${Group.count++}`) {
+  constructor(name = `Group ${Group.count++}`) {
     super(name);
   }
 
-  addChild(child: RenderObject) {
+  addChild(child: RenderObject): this {
     // TODO: Deal with duplicate children name
-    child.parent = this as RenderObject;
+    child.parent = this;
     this.children.push(child);
     return this;
   }
 
   // Find a direct child by name
-  child(name: string): RenderObject {
-    // FIXME: ts won't complain and this is checked in runtime.
-    return this.children.find((c) => c.name === name) as any;
+  child(name: string): RenderObject | undefined {
+    return this.children.find((c) => c.name === name);
   }
 
   render(cb: RenderCallback, material: Material, time: number): void;
@@ -42,7 +41,7 @@ export class Group extends RenderObject {
     material: Material,
     matrix: mat4 | number,
     time?: number
-  ) {
+  ): void {
     let modelMatrix: mat4 | undefined = matrix as mat4;
     if (arguments.length === 3) {
       time = matrix as number;
@@ -77,7 +76,7 @@ export class Group extends RenderObject {
     }
   }
 
-  clone(preserveModelMatrix = false) {
+  clone(preserveModelMatrix = false): Group {
     const s = new Group(this.name);
     s.parent = this.parent;
     s.animateMatrix = this.animateMatrix;
@@ -96,11 +95,11 @@ export class Group extends RenderObject {
     return s;
   }
 
-  freeze() {
+  freeze(): void {
     // do nothing for a group
   }
 
-  commit() {
+  commit(): this {
     mat4.transpose(this.modelMatrix, this.modelMatrix);
     this.children.forEach((child) => {
       mat4.transpose(child.modelMatrix, child.modelMatrix);
@@ -111,7 +110,7 @@ export class Group extends RenderObject {
     return this;
   }
 
-  mergeMaterial(material: Material) {
+  mergeMaterial(material: Material): void {
     super.mergeMaterial(material);
 
     this.children.forEach((child) => {
@@ -119,7 +118,7 @@ export class Group extends RenderObject {
     });
   }
 
-  bufferCount() {
+  bufferCount(): BuffersLength {
     const ret: BuffersLength = {
       vertex: 0,
       mesh: 0,
@@ -136,8 +135,8 @@ export class Group extends RenderObject {
     return ret;
   }
 
-  bufferAppend(buffers: Buffers) {
-    for (let child of this.children) {
+  bufferAppend(buffers: Buffers): void {
+    for (const child of this.children) {
       child.bufferAppend(buffers);
     }
   }
@@ -148,7 +147,7 @@ export class Polygon extends Primitive {
 
   constructor(
     points: [number, number, number][],
-    name: string = `Rectangle ${Rectangle.count++}`
+    name = `Rectangle ${Rectangle.count++}`
   ) {
     if (points.length < 3) {
       throw new Error("Polygon must have a least 3 points");
@@ -156,7 +155,7 @@ export class Polygon extends Primitive {
 
     const pf = new PointFactory();
     const faces = [];
-    let o = pf.get(...points[0]);
+    const o = pf.get(...points[0]);
     let a = pf.get(...points[1]);
     for (const p of points.slice(2)) {
       const b = pf.get(...p);
@@ -172,7 +171,7 @@ export class Polygon extends Primitive {
 export class Rectangle extends Polygon {
   static count = 0;
 
-  constructor(name: string = `Rectangle ${Rectangle.count++}`) {
+  constructor(name = `Rectangle ${Rectangle.count++}`) {
     super(
       [
         [-1, -1, 0],
@@ -188,7 +187,7 @@ export class Rectangle extends Polygon {
 export class Cube extends Primitive {
   static count = 0;
 
-  constructor(name: string = `Cube ${Cube.count++}`) {
+  constructor(name = `Cube ${Cube.count++}`) {
     const pf = new PointFactory();
     const uv = new UVFactory();
 
@@ -206,9 +205,8 @@ export class Cube extends Primitive {
     const w = uv.get(1, 1);
     const x = uv.get(1, 0);
 
-    const t = [u, v, w, u, w, x];
+    // const t = [u, v, w, u, w, x];
 
-    // prettier-ignore
     const faces = [
       new Face(a, b, c, u, v, w, true),
       new Face(a, c, d, u, w, x, true),
@@ -221,7 +219,7 @@ export class Cube extends Primitive {
       new Face(b, f, g, u, v, w, true),
       new Face(b, g, c, u, w, x, true),
       new Face(e, a, d, u, v, w, true),
-      new Face(e, d, h, u, w, x, true)
+      new Face(e, d, h, u, w, x, true),
     ];
 
     super(name, faces, pf);
@@ -242,7 +240,7 @@ const sin = rounded(Math.sin);
 export class Cylinder extends Primitive {
   static count = 0;
 
-  constructor(segments = 16, name: string = `Cylinder ${Cylinder.count++}`) {
+  constructor(segments = 16, name = `Cylinder ${Cylinder.count++}`) {
     if (segments < 3) {
       console.warn("The segments of a cylinder should be at least 3");
       segments = 3;
@@ -282,7 +280,7 @@ export class Cylinder extends Primitive {
 
 export class Tetrahedron extends Primitive {
   static count = 0;
-  constructor(name: string = `Tetranhedron ${Tetrahedron.count++}`) {
+  constructor(name = `Tetranhedron ${Tetrahedron.count++}`) {
     const pf = new PointFactory();
 
     const a = pf.get(-0.5, -1 / (2 * Math.sqrt(2)), 0);
@@ -326,7 +324,7 @@ export class Sphere extends Primitive {
 
     const pf = new PointFactory();
 
-    let prevCol = [];
+    const prevCol = [];
     for (let j = 0; j <= segments; j++) {
       const theta = j * (Math.PI / segments) - Math.PI / 2;
 
