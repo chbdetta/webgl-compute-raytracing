@@ -1,5 +1,5 @@
 import { mat4, vec3 } from "gl-matrix";
-import { Face, PointFactory } from "../point";
+import { Face, PointFactory } from "../../point";
 import RenderObject, { RenderCallback } from "./render";
 import Material from "../material";
 import { Slab } from "./bounding-box";

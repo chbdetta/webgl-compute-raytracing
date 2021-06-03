@@ -45,7 +45,7 @@ export class Buffer implements Buffer {
     this.bindingPoint = bindingPoint;
   }
 
-  createWebGLBuffer(gl: WebGL2Context) {
+  createWebGLBuffer(gl: WebGL2Context, name: string) {
     const id = gl.createBuffer();
 
     gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, id);

@@ -1,8 +1,8 @@
 // reference https://github.com/oktomus/web-experiments/blob/1e2d3bfbe6/webgl-compute/toy-raytracer/js/renderer.js
 
-import computeShader from "./render.comp";
-import blitShader from "./blit.comp";
-import World from "./world";
+import computeShader from "shader/render.comp";
+import blitShader from "shader/blit.comp";
+import World from "world";
 import Stats from "./stats";
 import Camera from "./camera";
 import { Buffers, Buffer } from "./buffer";
@@ -178,11 +178,13 @@ export default class Renderer {
     }
 
     // create texture for ComputeShader write to
-    const frameTexture = (this.frameTexture = gl.createTexture() as WebGLTexture);
+    const frameTexture = (this.frameTexture =
+      gl.createTexture() as WebGLTexture);
     gl.bindTexture(gl.TEXTURE_2D, frameTexture);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, this.width, this.height);
 
-    const accumulatedTexture = (this.accumulatedTexture = gl.createTexture() as WebGLTexture);
+    const accumulatedTexture = (this.accumulatedTexture =
+      gl.createTexture() as WebGLTexture);
     gl.bindTexture(gl.TEXTURE_2D, accumulatedTexture);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, this.width, this.height);
 
@@ -251,7 +253,7 @@ export default class Renderer {
 
   sendBuffer(name: keyof BufferDescriptors, buffer: Buffer) {
     const { gl } = this;
-    this.buffers[name] = buffer.createWebGLBuffer(gl);
+    this.buffers[name] = buffer.createWebGLBuffer(gl, name);
     gl.bufferData(gl.SHADER_STORAGE_BUFFER, buffer.buffer, gl.STATIC_COPY);
     this.buffers[name]!.length = buffer.buffer.byteLength / 4;
 

@@ -1,7 +1,7 @@
 const path = require("path");
 
 module.exports = {
-  entry: "./index.ts",
+  entry: "./src/index.ts",
   module: {
     rules: [
       {
@@ -17,10 +17,12 @@ module.exports = {
   },
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
+    modules: [path.resolve(__dirname, "src"), "node_modules"],
   },
   output: {
     filename: "index.js",
     path: path.resolve(__dirname, "dist"),
   },
   mode: "development",
+  devtool: "eval-cheap-module-source-map",
 };

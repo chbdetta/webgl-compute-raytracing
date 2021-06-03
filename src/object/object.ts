@@ -1,5 +1,5 @@
 import { mat4, vec3, vec4 } from "gl-matrix";
-import { Face, PointFactory, UVFactory } from "../point";
+import { Face, PointFactory, UVFactory } from "../../point";
 import Material from "../material";
 import RenderObject, { RenderCallback } from "./render";
 import Primitive from "./primitive";
