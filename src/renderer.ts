@@ -1,6 +1,6 @@
-import computeShader from "shader/render.comp";
-import blitShader from "shader/blit.comp";
-import World from "world";
+import computeShader from "./shader/render.comp";
+import blitShader from "./shader/blit.comp";
+import World from "./world";
 import Stats from "./stats";
 import Camera from "./camera";
 import type { Buffers, Buffer, BufferDescriptor } from "./buffer";

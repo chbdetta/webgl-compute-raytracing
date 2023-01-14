@@ -1,5 +1,5 @@
 import { Slab } from "./object/bounding-box";
-import Color from "color";
+import Color from "./color";
 import { vec3 } from "gl-matrix";
 
 /**

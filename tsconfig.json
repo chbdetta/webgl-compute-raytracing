@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "ESNext",
     "allowJs": false,
-    "baseUrl": "src",
+    "baseUrl": ".",
     "moduleResolution": "node",
     "importHelpers": true,
     "noImplicitAny": true,
@@ -18,10 +18,12 @@
     "isolatedModules": true,
     "preserveValueImports": true,
     "sourceMap": true,
-    "outDir": "dist",
     "target": "ESNext",
     "lib": ["ESNext", "DOM"],
-    "typeRoots": ["./node_modules/@webgpu/types", "./node_modules/@types"]
+    "typeRoots": ["./node_modules/@webgpu/types", "./node_modules/@types"],
+    "paths": {
+      "src/*": ["src/*"]
+    }
   },
   "exclude": ["node_modules", "dist"]
 }
