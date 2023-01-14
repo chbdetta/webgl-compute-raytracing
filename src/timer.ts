@@ -26,6 +26,7 @@ export default class Timer {
       throw new Error("speed must be positive");
     }
     this.#speed = speed;
+    this.#prevRealTime = 0;
 
     Timer.timers.set(this.#id, this);
   }

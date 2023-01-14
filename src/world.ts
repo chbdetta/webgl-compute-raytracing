@@ -14,11 +14,11 @@ import Material from "./material";
 import Camera from "./camera";
 import Timer from "./timer";
 import {
-  Buffers,
   VertexBuffer,
   MeshBuffer,
   SlabBuffer,
   LightBuffer,
+  type Buffers,
 } from "./buffer";
 import { PointLight } from "./light";
 
@@ -31,7 +31,7 @@ export default class World {
   name: string;
   objects: Map<string, BaseObject> = new Map();
 
-  buffers: Buffers;
+  buffers?: Buffers;
 
   ambient: Color;
 

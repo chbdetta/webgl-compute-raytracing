@@ -1,5 +1,5 @@
 import { mat4 } from "gl-matrix";
-import { ToBuffer, BuffersLength, Buffers } from "../buffer";
+import type { ToBuffer, BuffersLength, Buffers } from "../buffer";
 
 const toRad = (angle: number) => (angle / 180) * Math.PI;
 
@@ -10,7 +10,7 @@ export default abstract class BaseObject implements ToBuffer {
   name: string;
   modelMatrix = mat4.create();
 
-  animateMatrix: (time: number, object: BaseObject) => void;
+  animateMatrix?: (time: number, object: BaseObject) => void;
 
   constructor(name: string) {
     this.name = name;

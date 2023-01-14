@@ -1,6 +1,6 @@
 import { BaseObject } from "../object";
 import Color from "../color";
-import { ToBuffer, Buffers, BuffersLength } from "../buffer";
+import type { Buffers, BuffersLength } from "../buffer";
 
 export interface LightOption {
   intensity?: number;

@@ -28,6 +28,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         [null, {\
           "packageLocation": "./",\
           "packageDependencies": [\
+            ["@types/gl-matrix", "npm:3.2.0"],\
             ["@typescript-eslint/eslint-plugin", "virtual:dbab3351114b59f9bb4fff3d2f6a59b97a95e0a52b50cc200a70fe5453ef2aa65d496f94d5dd0063fa5b85d0c3d6f8e7d990800224969e0daa21f35accd043fb#npm:4.33.0"],\
             ["@typescript-eslint/parser", "virtual:dbab3351114b59f9bb4fff3d2f6a59b97a95e0a52b50cc200a70fe5453ef2aa65d496f94d5dd0063fa5b85d0c3d6f8e7d990800224969e0daa21f35accd043fb#npm:4.33.0"],\
             ["@webgpu/types", "npm:0.1.24"],\
@@ -407,6 +408,16 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["@types/cors", "npm:2.8.13"],\
             ["@types/node", "npm:18.11.18"]\
+          ],\
+          "linkType": "HARD"\
+        }]\
+      ]],\
+      ["@types/gl-matrix", [\
+        ["npm:3.2.0", {\
+          "packageLocation": "../../.yarn/berry/cache/@types-gl-matrix-npm-3.2.0-8d4f85ee7e-8.zip/node_modules/@types/gl-matrix/",\
+          "packageDependencies": [\
+            ["@types/gl-matrix", "npm:3.2.0"],\
+            ["gl-matrix", "npm:3.4.3"]\
           ],\
           "linkType": "HARD"\
         }]\
@@ -2325,6 +2336,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./",\
           "packageDependencies": [\
             ["hw5", "workspace:."],\
+            ["@types/gl-matrix", "npm:3.2.0"],\
             ["@typescript-eslint/eslint-plugin", "virtual:dbab3351114b59f9bb4fff3d2f6a59b97a95e0a52b50cc200a70fe5453ef2aa65d496f94d5dd0063fa5b85d0c3d6f8e7d990800224969e0daa21f35accd043fb#npm:4.33.0"],\
             ["@typescript-eslint/parser", "virtual:dbab3351114b59f9bb4fff3d2f6a59b97a95e0a52b50cc200a70fe5453ef2aa65d496f94d5dd0063fa5b85d0c3d6f8e7d990800224969e0daa21f35accd043fb#npm:4.33.0"],\
             ["@webgpu/types", "npm:0.1.24"],\

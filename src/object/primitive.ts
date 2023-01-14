@@ -1,14 +1,14 @@
 import { mat4, vec3 } from "gl-matrix";
 import { Face, PointFactory } from "../../point";
-import RenderObject, { RenderCallback } from "./render";
+import RenderObject, { type RenderCallback } from "./render";
 import Material from "../material";
 import { Slab } from "./bounding-box";
 import {
-  Buffers,
   MeshBuffer,
   VertexBuffer,
   SlabBuffer,
-  BuffersLength,
+  type Buffers,
+  type BuffersLength,
 } from "../buffer";
 
 /**
@@ -28,6 +28,7 @@ export default class Primitive extends RenderObject {
   constructor(name: string, faces: Readonly<Face[]>, pf: PointFactory) {
     super(name);
 
+    this.data = new Float32Array();
     this.faces = faces;
     this.rawPoints = pf;
   }
@@ -147,10 +148,10 @@ export default class Primitive extends RenderObject {
       slabCount: this.bbox.length,
       slabOffset: buffer.slab.cursor / SlabBuffer.bytes,
       // we know BaseMaterial would be merged into here, so they are always available
-      specularExponent: this.material.specularExponent!,
-      specularColor: this.material.specular!,
-      diffuseColor: this.material.color!,
-      refractionColor: this.material.refraction!,
+      specularExponent: this.material.specularExponent,
+      specularColor: this.material.specular,
+      diffuseColor: this.material.color,
+      refractionColor: this.material.refraction,
     });
 
     for (const face of this.faces) {

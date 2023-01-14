@@ -1,6 +1,6 @@
-import Light, { LightOption } from "./light";
+import Light, { type LightOption } from "./light";
 import { vec3 } from "gl-matrix";
-import { BuffersLength, Buffers, LightBuffer } from "../buffer";
+import { LightBuffer, type BuffersLength, type Buffers } from "../buffer";
 
 interface PointLightOption extends LightOption {
   position: vec3;
@@ -17,7 +17,7 @@ export default class PointLight extends Light {
     this.radius = options.radius ?? 1;
   }
 
-  bufferAppend(buffers: Buffers) {
+  bufferAppend(buffers: Buffers): void {
     buffers.light.append({
       intensity: this.intensity,
       position: this.position,

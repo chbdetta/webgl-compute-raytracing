@@ -1,5 +1,10 @@
 import RenderObject from "./render";
-import { VertexBuffer, MeshBuffer, Buffers, BuffersLength } from "../buffer";
+import {
+  VertexBuffer,
+  MeshBuffer,
+  type Buffers,
+  type BuffersLength,
+} from "../buffer";
 import { vec3, vec4, mat4 } from "gl-matrix";
 
 export class ParamSphere extends RenderObject {
@@ -32,10 +37,10 @@ export class ParamSphere extends RenderObject {
       // -1 face number denotes a parameterized object
       faceCount: -1,
       vertexOffset: buffers.vertex.cursor / VertexBuffer.bytes,
-      specularExponent: this.material.specularExponent!,
-      specularColor: this.material.specular!,
-      diffuseColor: this.material.color!,
-      refractionColor: this.material.refraction!,
+      specularExponent: this.material.specularExponent,
+      specularColor: this.material.specular,
+      diffuseColor: this.material.color,
+      refractionColor: this.material.refraction,
     });
 
     buffers.vertex.append(this.origin);

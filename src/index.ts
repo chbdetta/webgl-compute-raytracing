@@ -112,7 +112,7 @@ function main() {
   worldSelector.dispatchEvent(new InputEvent("change"));
 
   document.getElementById("reset")?.addEventListener("click", () => {
-    renderer.world.camera.reset();
+    renderer.world?.camera.reset();
   });
 
   tick();

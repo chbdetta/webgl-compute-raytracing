@@ -3,7 +3,7 @@ import blitShader from "shader/blit.comp";
 import World from "world";
 import Stats from "./stats";
 import Camera from "./camera";
-import { Buffers, Buffer, BufferDescriptor } from "./buffer";
+import type { Buffers, Buffer, BufferDescriptor } from "./buffer";
 
 // 2D local invocation
 const LOCAL_X = 16;
@@ -26,7 +26,7 @@ export default class Renderer {
   gl: WebGL2Context;
   renderProgram: WebGLProgram;
   blitProgram: WebGLProgram;
-  uniforms: {
+  uniforms!: {
     [name: string]: WebGLUniformLocation;
   };
   buffers: BufferDescriptors = {
@@ -39,46 +39,49 @@ export default class Renderer {
 
   completed: boolean;
 
-  frameTexture: WebGLTexture;
-  accumulatedTexture: WebGLTexture;
+  frameTexture!: WebGLTexture;
+  accumulatedTexture!: WebGLTexture;
 
-  #world: World;
+  #world?: World;
   #moving = 0;
 
-  get world(): World {
+  get world(): World | undefined {
     return this.#world;
   }
 
-  set world(world: World) {
+  set world(world: World | undefined) {
     this.#world?.camera.removeListener(
       Camera.CHANGE,
       this.onCameraChange.bind(this)
     );
 
     this.#world = world;
-    this.#world.init();
-    this.#world.camera.addListener(
-      Camera.CHANGE,
-      this.onCameraChange.bind(this)
-    );
-    this.#world.camera.setRatio(this.width / this.height);
-    this.#world.camera.update();
 
-    this.sendWorldBuffer();
+    if (this.#world) {
+      this.#world.init();
+      this.#world.camera.addListener(
+        Camera.CHANGE,
+        this.onCameraChange.bind(this)
+      );
+      this.#world.camera.setRatio(this.width / this.height);
+      this.#world.camera.update();
+
+      this.sendWorldBuffer();
+    }
   }
 
-  #width: number;
+  #width?: number;
   get width(): number {
-    return this.#width;
+    return this.#width ?? 0;
   }
   set width(w: number) {
     this.#width = Math.ceil(w / LOCAL_X) * LOCAL_X;
     this.canvas.width = this.#width;
   }
 
-  #height: number;
+  #height?: number;
   get height(): number {
-    return this.#height;
+    return this.#height ?? 0;
   }
   set height(h: number) {
     this.#height = Math.ceil(h / LOCAL_Y) * LOCAL_Y;
@@ -270,7 +273,12 @@ export default class Renderer {
   }
 
   sendWorldBuffer(): void {
-    if (!this.#world) return;
+    if (!this.#world?.buffers) {
+      console.warn(
+        "World buffer isn't available. Did you forget to call .freeze()"
+      );
+      return;
+    }
 
     for (const [name, buffer] of Object.entries(this.#world.buffers) as [
       keyof Buffers,

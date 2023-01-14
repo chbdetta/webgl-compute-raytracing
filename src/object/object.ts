@@ -1,11 +1,11 @@
 import { mat4, vec3 } from "gl-matrix";
 import { Face, PointFactory, UVFactory } from "../../point";
 import Material from "../material";
-import RenderObject, { RenderCallback } from "./render";
+import RenderObject, { type RenderCallback } from "./render";
 import Primitive from "./primitive";
-import { BuffersLength, Buffers } from "../buffer";
+import type { BuffersLength, Buffers } from "../buffer";
 
-export { RenderCallback };
+export type { RenderCallback };
 
 // A virtual object that doesn't have any vertices
 export class Group extends RenderObject {
@@ -119,17 +119,17 @@ export class Group extends RenderObject {
   }
 
   bufferCount(): BuffersLength {
-    const ret: BuffersLength = {
+    const ret = {
       vertex: 0,
       mesh: 0,
       slab: 0,
-    };
+    } satisfies BuffersLength;
 
     this.children.forEach((child) => {
       const counts = child.bufferCount();
-      ret.vertex! += counts.vertex ?? 0;
-      ret.mesh! += counts.mesh ?? 0;
-      ret.slab! += counts.slab ?? 0;
+      ret.vertex += counts.vertex ?? 0;
+      ret.mesh += counts.mesh ?? 0;
+      ret.slab += counts.slab ?? 0;
     });
 
     return ret;

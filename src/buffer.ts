@@ -100,10 +100,10 @@ export class MeshBuffer extends Buffer {
     vertexOffset: number;
     slabCount?: number;
     slabOffset?: number;
-    specularExponent: number;
-    diffuseColor: Color;
-    specularColor: Color;
-    refractionColor: Color;
+    specularExponent?: number;
+    diffuseColor?: Color;
+    specularColor?: Color;
+    refractionColor?: Color;
   }): void {
     // TODO: define the structure here and generate the glsl struct string
     const intBuffer = new Int32Array(this.buffer);

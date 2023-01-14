@@ -3,9 +3,6 @@ import { StatsBuffer } from "./buffer";
 class Stats {
   static ItemSize = 5;
 
-  width: number;
-  height: number;
-
   buffer: StatsBuffer;
   data: number[];
   prev = 0;

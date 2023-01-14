@@ -2,7 +2,7 @@ import { mat4 } from "gl-matrix";
 import Material from "../material";
 import BaseObject from "./base";
 import Color from "../color";
-import { BuffersLength, Buffers } from "../buffer";
+import type { BuffersLength, Buffers } from "../buffer";
 
 export type RenderCallback = (
   vertices: Float32Array,
@@ -14,7 +14,7 @@ export type RenderCallback = (
  * A RenderObject would be rendered into the scene, it can have material
  */
 export default abstract class RenderObject extends BaseObject {
-  parent: RenderObject;
+  parent?: RenderObject;
   material: Material;
 
   constructor(name: string) {
