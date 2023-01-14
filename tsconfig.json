@@ -16,6 +16,7 @@
     "preserveConstEnums": true,
     "useDefineForClassFields": true,
     "isolatedModules": true,
+    "preserveValueImports": true,
     "sourceMap": true,
     "outDir": "dist",
     "target": "ESNext",
