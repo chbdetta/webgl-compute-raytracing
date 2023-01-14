@@ -1,12 +1,4 @@
-declare module "*.comp" {
-  const content: string;
-  export default content;
-}
-declare module "*.frag" {
-  const content: string;
-  export default content;
-}
-declare module "*.vert  " {
+declare module "*?raw" {
   const content: string;
   export default content;
 }
