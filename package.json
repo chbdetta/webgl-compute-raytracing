@@ -27,5 +27,6 @@
   "dependencies": {
     "eventemitter3": "^4.0.4",
     "gl-matrix": "^3.3.0"
-  }
+  },
+  "packageManager": "yarn@3.3.1"
 }
